@@ -40,8 +40,12 @@ process tracyAssemble {
             chmod +x "\$TRACY_BIN"
         fi
 
-        // Reference-guided assembly of forward + reverse chromatograms
-        "\$TRACY_BIN" assemble -r ${ref} ${forward} ${reverse} > ${sampleId}.consensus.fasta
+        // Reference-guided or de-novo assembly of forward + reverse chromatograms
+        if [ -n "${ref:-}" ]; then
+            "$TRACY_BIN" assemble -r ${ref} ${forward} ${reverse} > ${sampleId}.consensus.fasta
+        else
+            "$TRACY_BIN" assemble ${forward} ${reverse} > ${sampleId}.consensus.fasta
+        fi
         """
 }
 
