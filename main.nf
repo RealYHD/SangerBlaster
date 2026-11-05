@@ -33,13 +33,13 @@ process tracyAssemble {
 
     script:
         """
-        // Ensure Tracy binary is available (static binary, downloaded once to workdir)
+        # Ensure Tracy binary is available (static binary, downloaded once to workdir)
         if [ ! -f "\$workdir/tracy" ]; then
             wget -q -O "\$workdir/tracy" https://github.com/gear-genomics/tracy/releases/download/v0.9.1/tracy-v0.9.1-linux-amd64
             chmod +x "\$workdir/tracy"
         fi
 
-        // Reference-guided or de-novo assembly of forward + reverse chromatograms
+        # Reference-guided or de-novo assembly of forward + reverse chromatograms
         if [ -n "\$params.ref" ]; then
             "\$workdir/tracy" assemble -r \$params.ref \$forward \$reverse > \$sampleId.consensus.fasta
         else
