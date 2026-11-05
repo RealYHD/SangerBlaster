@@ -3,13 +3,14 @@
 nextflow.enable.dsl=2
 
 params.samples_tsv = './samples.tsv'
-
 params.db = ""
 params.evalue = '0.1'
 params.topHits = '5'
 params.cpus = '18'
 params.publish_dir = './'
 params.ref = ''
+params.db_name = params.db ? file(params.db).name : ''
+params.db_path = params.db ? file(params.db).parent : ''
 
 // =============================================================================
 // Tracy-based consensus: takes forward/reverse SCF chromatograms + reference,
@@ -26,7 +27,6 @@ process tracyAssemble {
 
     input:
         tuple val(sampleId), path(forward), path(reverse)
-        path ref
 
     output:
         tuple val(sampleId), path("*.fasta"), emit: consensus
@@ -34,17 +34,16 @@ process tracyAssemble {
     script:
         """
         // Ensure Tracy binary is available (static binary, downloaded once to workdir)
-        TRACY_BIN="\$workdir/tracy"
-        if [ ! -f "\$TRACY_BIN" ]; then
-            wget -q -O "\$TRACY_BIN" https://github.com/gear-genomics/tracy/releases/download/v0.9.1/tracy-v0.9.1-linux-amd64
-            chmod +x "\$TRACY_BIN"
+        if [ ! -f "\$workdir/tracy" ]; then
+            wget -q -O "\$workdir/tracy" https://github.com/gear-genomics/tracy/releases/download/v0.9.1/tracy-v0.9.1-linux-amd64
+            chmod +x "\$workdir/tracy"
         fi
 
         // Reference-guided or de-novo assembly of forward + reverse chromatograms
-        if [ -n "${ref:-}" ]; then
-            "$TRACY_BIN" assemble -r ${ref} ${forward} ${reverse} > ${sampleId}.consensus.fasta
+        if [ -n "\$params.ref" ]; then
+            "\$workdir/tracy" assemble -r \$params.ref \$forward \$reverse > \$sampleId.consensus.fasta
         else
-            "$TRACY_BIN" assemble ${forward} ${reverse} > ${sampleId}.consensus.fasta
+            "\$workdir/tracy" assemble \$forward \$reverse > \$sampleId.consensus.fasta
         fi
         """
 }
@@ -67,22 +66,22 @@ process blastn {
 
     script:
         """
-        blastn \
-            -query ${query} -db "${db}/${params.db_name}/nt" \
-            -outfmt 11 -out ${query.baseName}_blast.asn \
-            -evalue ${params.evalue} \
+        blastn \\
+            -query ${query} -db "${db}/${params.db_name}/nt" \\
+            -outfmt 11 -out ${query.baseName}_blast.asn \\
+            -evalue ${params.evalue} \\
             -num_threads ${params.cpus}
 
-        blast_formatter \
-            -archive ${query.baseName}_blast.asn \
+        blast_formatter \\
+            -archive ${query.baseName}_blast.asn \\
             -outfmt 5 -out ${query.baseName}_blast.xml
 
-        blast_formatter \
-            -archive ${query.baseName}_blast.asn \
+        blast_formatter \\
+            -archive ${query.baseName}_blast.asn \\
             -html -out ${query.baseName}_blast.html
 
-        blast_formatter \
-            -archive ${query.baseName}_blast.asn \
+        blast_formatter \\
+            -archive ${query.baseName}_blast.asn \\
             -outfmt "6 qaccver saccver pident length evalue bitscore mismatch gapopen qstart qend sstart send stitle" -out ${query.baseName}_blast_unsort.tsv
 
         sort -n -r -k 6 ${query.baseName}_blast_unsort.tsv > ${query.baseName}_blast_sort.tsv
@@ -119,7 +118,7 @@ process blastHits_concat {
 
         """
         cat ${combinedFiles} >> concatenatedHits.tsv
-        awk 'BEGIN{print "qaccver\tsaccver\tpident\tlength\tevalue\tbitscore\tmismatch\tgapopen\tqstart\tqend\tsstart\tsend\tstitle"}1' concatenatedHits.tsv > concatenatedHits_withHeaders.tsv
+        awk 'BEGIN{print "qaccver\\tsaccver\\tpident\\tlength\\tevalue\\tbitscore\\tmismatch\\tgapopen\\tqstart\\tqend\\tsstart\\tsend\\tstitle"}1' concatenatedHits.tsv > concatenatedHits_withHeaders.tsv
         """
 }
 
@@ -127,7 +126,7 @@ process blastHits_concat {
 // Workflow
 // =============================================================================
 workflow {
-    log.info """\
+    log.info """\\
 
     s a n g e r F L O W
     A Sanger sequencing-based bioinformatics pipeline for pest and pathogen diagnosis 
@@ -138,15 +137,13 @@ workflow {
     """
     .stripIndent()
 
-    params.db_name = params.db ? file(params.db).name : ""
-    params.db_path = params.db ? file(params.db).parent : ""
-
     // Read samples.tsv: sampleId, read1 (forward SCF), read2 (reverse SCF)
     // Then use Tracy to assemble a consensus FASTA directly from chromatograms
-    Channel.fromPath( params.samples_tsv )
+    def samplesChannel = channel.fromPath( params.samples_tsv )
         | splitCsv( header: true, sep: '\t' )
         | map { row -> tuple( row.sampleId, file(row.read1), file(row.read2) ) }
-        | tracyAssemble( params.ref )
+
+    tracyAssemble( samplesChannel )
 
     blastn( tracyAssemble.out.consensus, params.db_path )
     blastnTopHits(blastn.out.blastHits)
