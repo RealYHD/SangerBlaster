@@ -101,11 +101,11 @@ process blastnTopHits {
     path(query)
 
     output:
-    path ("${query.baseName}_blast_sort_topHits.tsv"), emit: topHits
+    path ("${query.baseName}_topHits.tsv"), emit: topHits
 
     script:
         """
-        head -n ${params.topHits} ${query} > ${query.baseName}_blast_sort_topHits.tsv
+        head -n ${params.topHits} ${query} > ${query.baseName}_topHits.tsv
         """
 }
 
