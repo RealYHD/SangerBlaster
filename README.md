@@ -23,13 +23,13 @@ GenoSanger was developed by Harrison Deng (murphygargantua-agent) with assistanc
 |---|---|---|
 | **Input** | FASTA files (already basecalled) | **SCF chromatogram traces** (forward + reverse) |
 | **Consensus** | bioawk → sed → Clustal → EMBOSS cons | **Tracy `assemble`** — reference-guided assembly of SCF traces |
-| **Reference** | Not required | **Required** (`--ref /path/to/reference.fa`) |
+| **Reference** | Not required | **Optional** (`--ref` for reference-guided; de-novo by default) |
 | **QC** | Simple sed-based ambiguity trimming | Tracy-based quality-controlled consensus |
 | **BLAST** | Yes (unchanged) | Yes (unchanged) |
 
-GenoSanger retains the original sangerFlow's BLAST-based species identification workflow, but replaces the consensus-forming steps (bioawk/Clustal/EMBOSS) with Tracy's reference-guided assembly, which:
+GenoSanger retains the original sangerFlow's BLAST-based species identification workflow, but replaces the consensus-forming steps (bioawk/Clustal/EMBOSS) with Tracy's assembly, which:
 - Reads SCF/AB1/ABI chromatogram files natively
-- Assembles forward and reverse traces against a reference
+- Assembles forward and reverse traces — reference-guided if `--ref` is given, or de-novo otherwise
 - Produces a consensus FASTA with uncovered positions left as N/ambiguous (no forced filling)
 - Auto-downloads Tracy v0.9.1 static binary on first run
 
@@ -43,7 +43,7 @@ This repository contains code generated or significantly modified by artificial 
 
 - Install [Nextflow](https://www.nextflow.io/)
 - Install [Singularity](https://docs.sylabs.io/) (or Docker)
-- Have a **reference FASTA** for your target locus (e.g., ompA reference for Chlamydia)
+- Optionally have a **reference FASTA** for your target locus (e.g., ompA reference for Chlamydia) — if not provided, Tracy uses de-novo assembly
 
 > Note: Tracy is auto-downloaded from GitHub on first run. No separate Tracy installation needed.
 
@@ -70,7 +70,7 @@ See: https://github.com/asadprodhan/blastn
 ```bash
 nextflow run murphygargantua-agent/GenoSanger \
     --samples_tsv samples.tsv \
-    --ref /path/to/reference.fa \
+    [--ref /path/to/reference.fa] \
     --db /path/to/blastn_database \
     --publish_dir ./
 ```
@@ -80,13 +80,21 @@ You can set blastn thresholds with:
 - `--cpus` — default 18
 - `--topHits` — default 5
 
-Example:
+Example (reference-guided):
 ```bash
 nextflow run murphygargantua-agent/GenoSanger \
     --samples_tsv samples.tsv \
     --ref reference.fa \
     --evalue 0.05 --topHits 1 --cpus 16 \
     --db /path/to/blastn_database
+```
+
+Example (de-novo, no reference):
+```bash
+nextflow run murphygargantua-agent/GenoSanger \
+    --samples_tsv samples.tsv \
+    --db /path/to/blastn_database \
+    --publish_dir ./
 ```
 
 ## Outputs
@@ -100,8 +108,8 @@ When the run completes, three directories are created:
 ## Limitations
 
 - The Tracy binary must be downloadable from GitHub at runtime (requires network access).
-- The `--ref` parameter must point to a valid reference FASTA for reference-guided assembly.
-- De novo assembly (without `--ref`) is supported by Tracy but not configured in the default workflow.
+- Reference-guided assembly requires `--ref` pointing to a valid reference FASTA.
+- De-novo assembly (without `--ref`) is supported but may produce lower-quality consensus when traces don't sufficiently overlap.
 
 ## License
 
