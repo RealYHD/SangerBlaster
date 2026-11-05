@@ -1,0 +1,108 @@
+<h1 align="center">GenoSanger — Sanger amplicon sequencing analysis with Tracy</h1>
+
+<p align="center">
+  <a href="https://github.com/murphygargantua-agent/GenoSanger#GPL-3.0-1-ov-file"><img src="https://img.shields.io/badge/License-GPL%203.0-yellow.svg" alt="License GPL 3.0" style="display: inline-block;"></a>
+  <a href="https://github.com/asadprodhan/sangerFlow"><img src="https://img.shields.io/badge/Original-sangerFlow-blue.svg" alt="Based on sangerFlow" style="display: inline-block;"></a>
+</p>
+
+<br />
+
+## About GenoSanger
+
+GenoSanger is a fork of [sangerFlow](https://github.com/asadprodhan/sangerFlow) (a Nextflow pipeline for Sanger amplicon sequencing analysis) that adds **native SCF chromatogram support** via [Tracy](https://github.com/gear-genomics/tracy).
+
+Original pipeline: M. Asaduzzaman Prodhan, DPIRD Diagnostics and Laboratory Services, Department of Primary Industries and Regional Development, 3 Baron-Hay Court, South Perth, WA 6151, Australia. Correspondence: Asad.Prodhan@dpird.wa.gov.au
+
+Original publication: Prodhan et al. (2024) "sangerFlow, a Sanger sequencing-based bioinformatics pipeline for pests and pathogens identification" (bioRxiv, DOI: 10.1101/2024.05.10.593518).
+
+GenoSanger was developed by Harrison Deng (murphygargantua-agent) with assistance from the Hermes Agent AI.
+
+### Key differences from sangerFlow
+
+| Feature | sangerFlow (original) | GenoSanger (this fork) |
+|---|---|---|
+| **Input** | FASTA files (already basecalled) | **SCF chromatogram traces** (forward + reverse) |
+| **Consensus** | bioawk → sed → Clustal → EMBOSS cons | **Tracy `assemble`** — reference-guided assembly of SCF traces |
+| **Reference** | Not required | **Required** (`--ref /path/to/reference.fa`) |
+| **QC** | Simple sed-based ambiguity trimming | Tracy-based quality-controlled consensus |
+| **BLAST** | Yes (unchanged) | Yes (unchanged) |
+
+GenoSanger retains the original sangerFlow's BLAST-based species identification workflow, but replaces the consensus-forming steps (bioawk/Clustal/EMBOSS) with Tracy's reference-guided assembly, which:
+- Reads SCF/AB1/ABI chromatogram files natively
+- Assembles forward and reverse traces against a reference
+- Produces a consensus FASTA with uncovered positions left as N/ambiguous (no forced filling)
+- Auto-downloads Tracy v0.9.1 static binary on first run
+
+## AI Content Disclosure
+
+This repository contains code generated or significantly modified by artificial intelligence (Hermes Agent). The original pipeline (sangerFlow) was written by M. Asaduzzaman Prodhan. The GenoSanger modifications — including the Tracy integration, `main.nf` rewrite, `nextflow.config` resource definitions, and documentation — were produced with AI assistance.
+
+## How to use GenoSanger
+
+### Step 1: Install required software
+
+- Install [Nextflow](https://www.nextflow.io/)
+- Install [Singularity](https://docs.sylabs.io/) (or Docker)
+- Have a **reference FASTA** for your target locus (e.g., ompA reference for Chlamydia)
+
+> Note: Tracy is auto-downloaded from GitHub on first run. No separate Tracy installation needed.
+
+### Step 2: Prepare a sample description file
+
+Create a TSV file with three columns:
+1. Sample ID
+2. Forward SCF trace file name (e.g., `sample_R1.scf`)
+3. Reverse SCF trace file name (e.g., `sample_R2.scf`)
+
+Example `samples.tsv`:
+```
+sampleId	read1	read2
+SAMPLE001	SAMPLE001_R1.scf	SAMPLE001_R2.scf
+SAMPLE002	SAMPLE002_R1.scf	SAMPLE002_R2.scf
+```
+
+### Step 3: Download a BLAST database from NCBI
+
+See: https://github.com/asadprodhan/blastn
+
+### Step 4: Run GenoSanger
+
+```bash
+nextflow run murphygargantua-agent/GenoSanger \
+    --samples_tsv samples.tsv \
+    --ref /path/to/reference.fa \
+    --db /path/to/blastn_database \
+    --publish_dir ./
+```
+
+You can set blastn thresholds with:
+- `--evalue` — default 0.1
+- `--cpus` — default 18
+- `--topHits` — default 5
+
+Example:
+```bash
+nextflow run murphygargantua-agent/GenoSanger \
+    --samples_tsv samples.tsv \
+    --ref reference.fa \
+    --evalue 0.05 --topHits 1 --cpus 16 \
+    --db /path/to/blastn_database
+```
+
+## Outputs
+
+When the run completes, three directories are created:
+
+- **results/** — BLAST hit TSV files per sample + master `concatenatedHits_withHeaders.tsv`
+- **temp/** — intermediate consensus FASTA files
+- **work/** — Nextflow work directory (can be deleted to free space)
+
+## Limitations
+
+- The Tracy binary must be downloadable from GitHub at runtime (requires network access).
+- The `--ref` parameter must point to a valid reference FASTA for reference-guided assembly.
+- De novo assembly (without `--ref`) is supported by Tracy but not configured in the default workflow.
+
+## License
+
+This project is licensed under GPL v3.0. The original sangerFlow was also licensed under GPL v3.0.
