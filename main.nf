@@ -34,17 +34,22 @@ process tracyAssemble {
     script:
         """
         # Ensure Tracy binary is available (static binary, downloaded once to workdir)
-        if [ ! -f "\$workdir/tracy" ]; then
-            wget -q -O "\$workdir/tracy" https://github.com/gear-genomics/tracy/releases/download/v0.9.1/tracy-v0.9.1-linux-amd64
-            chmod +x "\$workdir/tracy"
+        if [ ! -f tracy ]; then
+            apt-get update -qq && apt-get install -y -qq wget && \
+            wget -q -O tracy https://github.com/gear-genomics/tracy/releases/download/v0.9.1/tracy-v0.9.1-linux-amd64 && \
+            chmod +x tracy
         fi
 
         # Reference-guided or de-novo assembly of forward + reverse chromatograms
-        if [ -n "\$params.ref" ]; then
-            "\$workdir/tracy" assemble -r \$params.ref \$forward \$reverse > \$sampleId.consensus.fasta
+        # Tracy writes consensus to {outprefix}.cons.fa, not stdout
+        if [ -n "${params.ref}" ]; then
+            ./tracy assemble -o "${sampleId}" -r ${params.ref} $forward $reverse 2>/dev/null
         else
-            "\$workdir/tracy" assemble \$forward \$reverse > \$sampleId.consensus.fasta
+            ./tracy assemble -o "${sampleId}" $forward $reverse 2>/dev/null
         fi
+
+        # Rename Tracy's output to match Nextflow's *.fasta output pattern
+        mv "${sampleId}.cons.fa" "${sampleId}.consensus.fasta"
         """
 }
 
@@ -67,7 +72,7 @@ process blastn {
     script:
         """
         blastn \\
-            -query ${query} -db "${db}/${params.db_name}/nt" \\
+            -query ${query} -db "${db}/${params.db_name}" \\
             -outfmt 11 -out ${query.baseName}_blast.asn \\
             -evalue ${params.evalue} \\
             -num_threads ${params.cpus}
