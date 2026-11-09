@@ -1,5 +1,24 @@
+# Python cache
 __pycache__/
 *.pyc
-.nextflow/
-*.log
+*.pyo
 
+# Nextflow
+.nextflow/
+.nextflow.log.*
+work/
+
+# Test artifacts
+test_*.tsv
+test_*.config
+test_db/
+SangerSequencingChromatograms/test_denovo.*
+SangerSequencingChromatograms/tracy
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
