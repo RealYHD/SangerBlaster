@@ -127,8 +127,36 @@ process blastHits_concat {
         """
 }
 
+// Validation process to check samples.tsv format
+process validateSamples {
+    script:
+        """
+        # Read the first line of the TSV file and verify headers
+        header=$(head -n 1 ${params.samples_tsv})
+        
+        # Check if the header matches exactly (tab-separated, no extra spaces)
+        if [[ "$header" != "sampleId\tread1\tread2" ]]; then
+            echo "ERROR: samples.tsv header must be exactly: sampleId\\tread1\\tread2"
+            echo "Current header: '$header'"
+            exit 1
+        fi
+        
+        # Check if the file has data rows
+        line_count=$(wc -l < ${params.samples_tsv})
+        if [ "$line_count" -lt 2 ]; then
+            echo "ERROR: samples.tsv must have at least one data row after the header"
+            exit 1
+        fi
+        
+        echo "samples.tsv format is valid!"
+        """
+}
+
 // Workflow
 workflow {
+    // Validate samples.tsv format first
+    validateSamples(params.samples_tsv)
+    
     log.info """\\
 
     s a n g e r F L O W
@@ -144,6 +172,8 @@ workflow {
     // Then use Tracy to assemble a consensus FASTA directly from chromatograms
     def samplesChannel = channel.fromPath( params.samples_tsv )
         | splitCsv( header: true, sep: '\t' )
+        // Validate that sampleId is not null and has 3 columns
+        | filter { it.size() == 3 && it[0] != null }
         | map { row -> tuple( row.sampleId, file(row.read1), file(row.read2) ) }
 
     tracyAssemble( samplesChannel )
