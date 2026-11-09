@@ -117,7 +117,7 @@ process blastn {
 
 process blastnTopHits {
     tag "${query.baseName}"
-
+    
     publishDir "${params.publish_dir}/temp", mode: 'copy'
 
     input:
@@ -157,67 +157,6 @@ process blastHits_concat {
         
         cat ${combinedFiles} >> concatenatedHits.tsv || exit 1
         awk 'BEGIN{print "qaccver\\tsaccver\\tpident\\tlength\\tevalue\\tbitscore\\tmismatch\\tgapopen\\tqstart\\tqend\\tsstart\\tsend\\tstitle"}1' concatenatedHits.tsv > concatenatedHits_withHeaders.tsv || exit 1
-        """
-}
-
-// Validation process to check samples.tsv format - DISABLED FOR TEST
-/*
-process validateSamples {
-    script:
-        """
-        # Read the first line of the TSV file and verify headers
-        header=$(head -n 1 $params.samples_tsv)
-        
-        # Check if the header matches exactly (tab-separated, no extra spaces)
-        if [[ "$header" != "sampleId\tread1\tread2" ]]; then
-            echo "ERROR: samples.tsv header must be exactly: sampleId\\tread1\\tread2"
-            echo "Current header: '$header'"
-            exit 1
-        fi
-        
-        # Check if the file has data rows
-        line_count=$(wc -l < $params.samples_tsv)
-        if [ "$line_count" -lt 2 ]; then
-            echo "ERROR: samples.tsv must have at least one data row after the header"
-            exit 1
-        fi
-        
-        echo "samples.tsv format is valid!"
-        """
-}
-*/
-
-// Pre-flight check for container runtime availability - FAILS FAST!
-process preFlightCheck {
-    when: false  // Run this but don't emit anything, just fail if conditions not met
-    
-    script:
-        """
-        # Check Docker or Singularity availability with timeout
-        echo "Checking container runtime..."
-        
-        if command -v docker &> /dev/null; then
-            echo "✓ Docker is available"
-            docker --version | head -1
-        elif command -v singularity &> /dev/null; then
-            echo "✓ Singularity is available"
-            singularity version 2>&1 | head -1
-        else
-            echo "✗ ERROR: Neither Docker nor Singularity is installed!"
-            echo "Please install a container runtime before running this pipeline."
-            exit 1
-        fi
-        
-        # Also check for wget/curl for Tracy download
-        if command -v wget &> /dev/null || command -v curl &> /dev/null; then
-            echo "✓ wget or curl is available"
-        else
-            echo "✗ ERROR: Neither wget nor curl is available!"
-            echo "Please install one of these tools to download Tracy."
-            exit 1
-        fi
-        
-        echo "Pre-flight check passed! Pipeline can proceed."
         """
 }
 
