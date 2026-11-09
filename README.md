@@ -47,6 +47,21 @@ This repository contains code generated or significantly modified by artificial 
 
 > Note: Tracy is auto-downloaded from GitHub on first run. No separate Tracy installation needed.
 
+### Step 1b: Verify system requirements (recommended)
+
+Before running the pipeline, verify all requirements are met:
+
+```bash
+./check_requirements.sh
+```
+
+This script checks for:
+- ✓ Container runtime (Docker or Singularity)
+- ✓ Download tools (wget or curl)
+- ✓ Nextflow version
+
+If any requirement is missing, the script exits with a clear error message.
+
 ### Step 2: Prepare a sample description file
 
 Create a TSV file with three columns:
