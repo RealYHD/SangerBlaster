@@ -12,10 +12,8 @@ params.ref = ''
 params.db_name = params.db ? file(params.db).name : ''
 params.db_path = params.db ? file(params.db).parent : ''
 
-// =============================================================================
 // Tracy-based consensus: takes forward/reverse SCF chromatograms + reference,
 // produces a consensus FASTA. Replaces the old bioawk/Clustal/EMBOSS pipeline.
-// =============================================================================
 process tracyAssemble {
     tag "${sampleId}"
 
@@ -33,10 +31,14 @@ process tracyAssemble {
 
     script:
         """
+        # Install wget if not available
+        if ! command -v wget &> /dev/null; then
+            apt-get update -qq && apt-get install -y -qq wget
+        fi
+
         # Ensure Tracy binary is available (static binary, downloaded once to workdir)
         if [ ! -f tracy ]; then
-            apt-get update -qq && apt-get install -y -qq wget && \
-            wget -q -O tracy https://github.com/gear-genomics/tracy/releases/download/v0.9.1/tracy-v0.9.1-linux-amd64 && \
+            wget -q -O tracy https://github.com/gear-genomics/tracy/releases/download/v0.9.1/tracy-v0.9.1-linux-amd64 && \\
             chmod +x tracy
         fi
 
@@ -53,9 +55,7 @@ process tracyAssemble {
         """
 }
 
-// =============================================================================
 // BLAST processes (unchanged from original sangerFlow)
-// =============================================================================
 process blastn {
     tag "${query.baseName}"
     publishDir "${params.publish_dir}/results", mode: 'copy'
@@ -127,9 +127,7 @@ process blastHits_concat {
         """
 }
 
-// =============================================================================
 // Workflow
-// =============================================================================
 workflow {
     log.info """\\
 
@@ -145,7 +143,7 @@ workflow {
     // Read samples.tsv: sampleId, read1 (forward SCF), read2 (reverse SCF)
     // Then use Tracy to assemble a consensus FASTA directly from chromatograms
     def samplesChannel = channel.fromPath( params.samples_tsv )
-        | splitCsv( header: true, sep: '	' )
+        | splitCsv( header: true, sep: '\t' )
         | map { row -> tuple( row.sampleId, file(row.read1), file(row.read2) ) }
 
     tracyAssemble( samplesChannel )
