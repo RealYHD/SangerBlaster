@@ -145,7 +145,7 @@ workflow {
     // Read samples.tsv: sampleId, read1 (forward SCF), read2 (reverse SCF)
     // Then use Tracy to assemble a consensus FASTA directly from chromatograms
     def samplesChannel = channel.fromPath( params.samples_tsv )
-        | splitCsv( header: true, sep: '\t' )
+        | splitCsv( header: true, sep: '	' )
         | map { row -> tuple( row.sampleId, file(row.read1), file(row.read2) ) }
 
     tracyAssemble( samplesChannel )
