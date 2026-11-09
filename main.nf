@@ -17,6 +17,9 @@ params.db_path = params.db ? file(params.db).parent : ''
 process tracyAssemble {
     tag "${sampleId}"
 
+    // TIMEOUT: Fail after 1 hour instead of hanging forever
+    time = 3600
+
     publishDir (
         path: "${params.publish_dir}/temp",
         mode: 'copy',
@@ -31,33 +34,52 @@ process tracyAssemble {
 
     script:
         """
-        # Install wget if not available
+        # Install wget if not available with timeout
         if ! command -v wget &> /dev/null; then
-            apt-get update -qq && apt-get install -y -qq wget
+            timeout 30 apt-get update -qq && timeout 60 apt-get install -y -qq wget || exit 1
         fi
 
         # Ensure Tracy binary is available (static binary, downloaded once to workdir)
         if [ ! -f tracy ]; then
-            wget -q -O tracy https://github.com/gear-genomics/tracy/releases/download/v0.9.1/tracy-v0.9.1-linux-amd64 && \\
-            chmod +x tracy
+            # Use timeout with wget or curl, fail after 30 seconds total
+            if command -v wget &> /dev/null; then
+                timeout 30 wget -q -O tracy https://github.com/gear-genomics/tracy/releases/download/v0.9.1/tracy-v0.9.1-linux-amd64 || exit 1
+                chmod +x tracy
+            elif command -v curl &> /dev/null; then
+                timeout 30 curl -L -o tracy https://github.com/gear-genomics/tracy/releases/download/v0.9.1/tracy-v0.9.1-linux-amd64 || exit 1
+                chmod +x tracy
+            else
+                echo "ERROR: Neither wget nor curl is available to download Tracy!"
+                exit 1
+            fi
+            
+            # Verify download succeeded and file is executable
+            if [ ! -s tracy ] || [ ! -x tracy ]; then
+                echo "ERROR: Failed to download or make Tracy executable!"
+                exit 1
+            fi
         fi
 
         # Reference-guided or de-novo assembly of forward + reverse chromatograms
         # Tracy writes consensus to {outprefix}.cons.fa, not stdout
         if [ -n "${params.ref}" ]; then
-            ./tracy assemble -o "${sampleId}" -r ${params.ref} $forward $reverse 2>/dev/null
+            timeout 3600 ./tracy assemble -o "${sampleId}" -r ${params.ref} $forward $reverse 2>/dev/null || exit 1
         else
-            ./tracy assemble -o "${sampleId}" $forward $reverse 2>/dev/null
+            timeout 3600 ./tracy assemble -o "${sampleId}" $forward $reverse 2>/dev/null || exit 1
         fi
 
         # Rename Tracy's output to match Nextflow's *.fasta output pattern
-        mv "${sampleId}.cons.fa" "${sampleId}.consensus.fasta"
+        mv "${sampleId}.cons.fa" "${sampleId}.consensus.fasta" || exit 1
         """
 }
 
 // BLAST processes (unchanged from original sangerFlow)
 process blastn {
     tag "${query.baseName}"
+    
+    // TIMEOUT: Fail after 2 hours instead of hanging forever
+    time = 7200
+    
     publishDir "${params.publish_dir}/results", mode: 'copy'
 
     input:
@@ -71,30 +93,40 @@ process blastn {
 
     script:
         """
+        # Ensure we have a BLAST database with proper metadata
+        if [ ! -d "${db}/" ]; then
+            echo "ERROR: BLAST database directory ${db} does not exist!"
+            exit 1
+        fi
+        
         blastn \\
             -query ${query} -db "${db}/${params.db_name}" \\
             -outfmt 11 -out ${query.baseName}_blast.asn \\
             -evalue ${params.evalue} \\
-            -num_threads ${params.cpus}
+            -num_threads ${params.cpus} || exit 1
 
         blast_formatter \\
             -archive ${query.baseName}_blast.asn \\
-            -outfmt 5 -out ${query.baseName}_blast.xml
+            -outfmt 5 -out ${query.baseName}_blast.xml || exit 1
 
         blast_formatter \\
             -archive ${query.baseName}_blast.asn \\
-            -html -out ${query.baseName}_blast.html
+            -html -out ${query.baseName}_blast.html || exit 1
 
         blast_formatter \\
             -archive ${query.baseName}_blast.asn \\
-            -outfmt "6 qaccver saccver pident length evalue bitscore mismatch gapopen qstart qend sstart send stitle" -out ${query.baseName}_blast_unsort.tsv
+            -outfmt "6 qaccver saccver pident length evalue bitscore mismatch gapopen qstart qend sstart send stitle" -out ${query.baseName}_blast_unsort.tsv || exit 1
 
-        sort -n -r -k 6 ${query.baseName}_blast_unsort.tsv > ${query.baseName}_blast_sort.tsv
+        sort -n -r -k 6 ${query.baseName}_blast_unsort.tsv > ${query.baseName}_blast_sort.tsv || exit 1
         """
 }
 
 process blastnTopHits {
     tag "${query.baseName}"
+    
+    // TIMEOUT: Fail after 5 minutes instead of hanging forever
+    time = 300
+
     publishDir "${params.publish_dir}/temp", mode: 'copy'
 
     input:
@@ -105,13 +137,21 @@ process blastnTopHits {
 
     script:
         """
-        head -n ${params.topHits} ${query} > ${query.baseName}_topHits.tsv
+        if [ ! -s ${query} ]; then
+            echo "ERROR: BLAST results file is empty or missing!"
+            exit 1
+        fi
+        
+        head -n ${params.topHits} ${query} > ${query.baseName}_topHits.tsv || exit 1
         """
 }
 
 process blastHits_concat {
-
+    
     publishDir "${params.publish_dir}/results", mode: 'copy'
+    
+    // TIMEOUT: Fail after 5 minutes instead of hanging forever
+    time = 300
 
     input:
     file combinedFiles
@@ -122,8 +162,13 @@ process blastHits_concat {
     script:
 
         """
-        cat ${combinedFiles} >> concatenatedHits.tsv
-        awk 'BEGIN{print "qaccver\\tsaccver\\tpident\\tlength\\tevalue\\tbitscore\\tmismatch\\tgapopen\\tqstart\\tqend\\tsstart\\tsend\\tstitle"}1' concatenatedHits.tsv > concatenatedHits_withHeaders.tsv
+        if [ ${combinedFiles.size()} -eq 0 ]; then
+            echo "ERROR: No files to concatenate!"
+            exit 1
+        fi
+        
+        cat ${combinedFiles} >> concatenatedHits.tsv || exit 1
+        awk 'BEGIN{print "qaccver\\tsaccver\\tpident\\tlength\\tevalue\\tbitscore\\tmismatch\\tgapopen\\tqstart\\tqend\\tsstart\\tsend\\tstitle"}1' concatenatedHits.tsv > concatenatedHits_withHeaders.tsv || exit 1
         """
 }
 
@@ -152,8 +197,45 @@ process validateSamples {
         """
 }
 
+// Pre-flight check for container runtime availability - FAILS FAST!
+process preFlightCheck {
+    when: false  // Run this but don't emit anything, just fail if conditions not met
+    
+    script:
+        """
+        # Check Docker or Singularity availability with timeout
+        echo "Checking container runtime..."
+        
+        if command -v docker &> /dev/null; then
+            echo "✓ Docker is available"
+            docker --version | head -1
+        elif command -v singularity &> /dev/null; then
+            echo "✓ Singularity is available"
+            singularity version 2>&1 | head -1
+        else
+            echo "✗ ERROR: Neither Docker nor Singularity is installed!"
+            echo "Please install a container runtime before running this pipeline."
+            exit 1
+        fi
+        
+        # Also check for wget/curl for Tracy download
+        if command -v wget &> /dev/null || command -v curl &> /dev/null; then
+            echo "✓ wget or curl is available"
+        else
+            echo "✗ ERROR: Neither wget nor curl is available!"
+            echo "Please install one of these tools to download Tracy."
+            exit 1
+        fi
+        
+        echo "Pre-flight check passed! Pipeline can proceed."
+        """
+}
+
 // Workflow
 workflow {
+    // Pre-flight check for container runtime and tools availability - FAILS FAST!
+    preFlightCheck
+    
     // Validate samples.tsv format first
     validateSamples(params.samples_tsv)
     
