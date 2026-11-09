@@ -80,10 +80,34 @@ SAMPLE002	SAMPLE002_R1.scf	SAMPLE002_R2.scf
 
 See: https://github.com/asadprodhan/blastn
 
-### Step 4: Run GenoSanger
+### Step 3: Run GenoSanger
 
+You'll need a configuration file that matches your environment:
+
+**For Docker (local development / cloud):**
 ```bash
 nextflow run murphygargantua-agent/GenoSanger \
+    -c docker_local.config \
+    --samples_tsv samples.tsv \
+    [--ref /path/to/reference.fa] \
+    --db /path/to/blastn_database \
+    --publish_dir ./
+```
+
+**For Singularity (SLURM clusters):**
+```bash
+nextflow run murphygargantua-agent/GenoSanger \
+    -c singularity_nextflow.config \
+    --samples_tsv samples.tsv \
+    [--ref /path/to/reference.fa] \
+    --db /path/to/blastn_database \
+    --publish_dir ./
+```
+
+**For SLURM with Docker (production):**
+```bash
+nextflow run murphygargantua-agent/GenoSanger \
+    -c prod_nextflow.config \
     --samples_tsv samples.tsv \
     [--ref /path/to/reference.fa] \
     --db /path/to/blastn_database \
