@@ -82,12 +82,13 @@ See: https://github.com/asadprodhan/blastn
 
 ### Step 3: Run GenoSanger
 
+**Current status:** The pipeline is tested and working with Tracy assembly. BLAST steps are commented out until a test database is available.
+
 You'll need a configuration file that matches your environment:
 
 **For Docker (local development / cloud):**
 ```bash
-nextflow run murphygargantua-agent/GenoSanger \
-    -c docker_local.config \
+nextflow run . -c docker_local.config \
     --samples_tsv samples.tsv \
     [--ref /path/to/reference.fa] \
     --db /path/to/blastn_database \
@@ -96,8 +97,7 @@ nextflow run murphygargantua-agent/GenoSanger \
 
 **For Singularity (SLURM clusters):**
 ```bash
-nextflow run murphygargantua-agent/GenoSanger \
-    -c singularity_nextflow.config \
+nextflow run . -c singularity_nextflow.config \
     --samples_tsv samples.tsv \
     [--ref /path/to/reference.fa] \
     --db /path/to/blastn_database \
@@ -106,8 +106,7 @@ nextflow run murphygargantua-agent/GenoSanger \
 
 **For SLURM with Docker (production):**
 ```bash
-nextflow run murphygargantua-agent/GenoSanger \
-    -c prod_nextflow.config \
+nextflow run . -c prod_nextflow.config \
     --samples_tsv samples.tsv \
     [--ref /path/to/reference.fa] \
     --db /path/to/blastn_database \
@@ -121,7 +120,7 @@ You can set blastn thresholds with:
 
 Example (reference-guided):
 ```bash
-nextflow run murphygargantua-agent/GenoSanger \
+nextflow run . \
     --samples_tsv samples.tsv \
     --ref reference.fa \
     --evalue 0.05 --topHits 1 --cpus 16 \
@@ -130,11 +129,28 @@ nextflow run murphygargantua-agent/GenoSanger \
 
 Example (de-novo, no reference):
 ```bash
-nextflow run murphygargantua-agent/GenoSanger \
+nextflow run . \
     --samples_tsv samples.tsv \
     --db /path/to/blastn_database \
     --publish_dir ./
 ```
+
+> **Note:** The pipeline currently runs with hardcoded test samples. Full `samples.tsv` parsing is implemented but requires manual invocation. For testing, modify `main.nf` to use the sample channel directly.
+
+### Step 3b: Verify system requirements (recommended)
+
+Before running the pipeline, verify all requirements are met:
+
+```bash
+./check_requirements.sh
+```
+
+This script checks for:
+- ✓ Container runtime (Docker or Singularity)
+- ✓ Download tools (wget or curl)
+- ✓ Nextflow version
+
+If any requirement is missing, the script exits with a clear error message.
 
 ## Outputs
 
