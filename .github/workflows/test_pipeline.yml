@@ -23,7 +23,7 @@ jobs:
 
       - name: Install dependencies via Conda
         run: |
-          conda create -y -n genosanger -c conda-forge -c bioconda tracy blast makeblastdb
+          conda create -y -n genosanger -c conda-forge -c bioconda tracy blast
           conda activate genosanger
           which tracy
           which blastn
