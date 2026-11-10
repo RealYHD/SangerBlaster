@@ -33,41 +33,31 @@ process tracyAssemble {
 
     script:
         """
-        # Run Tracy assembly and capture output
-        tracy_output=$(mktemp)
-        
+        # Run Tracy assembly - let it write directly to log file
         if [ -n "${params.ref}" ]; then
             echo "Using reference mode with ${params.ref}"
-            tracy assemble -o ${sampleId} -r ${params.ref} $forward $reverse > $tracy_output 2>&1
+            tracy assemble -o ${sampleId} -r ${params.ref} $forward $reverse > "${sampleId}.tracy.log" 2>&1 || exit 1
         else
             echo "Using de novo mode"
-            tracy assemble -o ${sampleId} $forward $reverse > $tracy_output 2>&1
+            tracy assemble -o ${sampleId} $forward $reverse > "${sampleId}.tracy.log" 2>&1 || exit 1
         fi
-        
+
         # Check for mismatched traces error
-        if grep -q "At least 2 traces are required" $tracy_output; then
+        if grep -q "At least 2 traces are required" "${sampleId}.tracy.log"; then
             echo "ERROR: Traces don't match for ${sampleId} - marking as FAILED"
             touch ${sampleId}.FAILED
-            rm -f $tracy_output
+            rm -f "${sampleId}.tracy.log"
             exit 0  # Graceful failure, continue processing
         fi
-        
-        # Check if tracy failed with non-zero exit code
-        if [ $? -ne 0 ]; then
-            echo "ERROR: Tracy assembly failed for ${sampleId}:"
-            cat $tracy_output
-            rm -f $tracy_output
-            exit 1
-        fi
-        
+
         mv ${sampleId}.cons.fa ${sampleId}.consensus.fasta || {
             echo "ERROR: Failed to move consensus file for ${sampleId}"
             touch ${sampleId}.FAILED
-            rm -f $tracy_output
+            rm -f "${sampleId}.tracy.log"
             exit 1
         }
-        
-        rm -f $tracy_output
+
+        rm -f "${sampleId}.tracy.log"
         """
 }
 
@@ -92,7 +82,7 @@ process blastn {
             echo "ERROR: BLAST database directory ${db} does not exist!"
             exit 1
         fi
-        
+
         blastn \\
             -query ${query} -db "${db}/${params.db_name}" \\
             -outfmt 11 -out ${query.baseName}_blast.asn \\
@@ -133,14 +123,14 @@ process blastnTopHits {
             echo "ERROR: BLAST results file is empty or missing!"
             exit 1
         fi
-        
+
         head -n ${params.topHits} ${query} > ${query.baseName}_topHits.tsv || exit 1
         """
 }
 
 // Concatenate hits process
 process blastHits_concat {
-    
+
     publishDir "${params.publish_dir}/results", mode: 'copy'
 
     input:
@@ -156,7 +146,7 @@ process blastHits_concat {
             echo "ERROR: No files to concatenate!"
             exit 1
         fi
-        
+
         cat ${combinedFiles} >> concatenatedHits.tsv || exit 1
         awk 'BEGIN{print "qaccver\\tsaccver\\tpident\\tlength\\tevalue\\tbitscore\\tmismatch\\tgapopen\\tqstart\\tqend\\tsstart\\tsend\\tstitle"}1' concatenatedHits.tsv > concatenatedHits_withHeaders.tsv || exit 1
         """
@@ -167,11 +157,11 @@ workflow {
     log.info """
 
     s a n g e r F L O W
-    A Sanger sequencing-based bioinformatics pipeline for pest and pathogen diagnosis 
-    
+    A Sanger sequencing-based bioinformatics pipeline for pest and pathogen diagnosis
+
     Asad Prodhan
     =======================================
-    
+
     """
     .stripIndent()
 
@@ -182,18 +172,18 @@ workflow {
         throw new IllegalArgumentException("ERROR: samples.tsv header must be exactly: sampleId\\tread1\\tread2\nCurrent header: '$header'")
     }
 
-    def samplesChannel = Channel.fromPath(params.samples_tsv)
+    def samplesChannel = channel.fromPath(params.samples_tsv)
         | splitCsv( header: true, sep: '\t' )
         | map { row -> tuple( row.sampleId, file(row.read1), file(row.read2) ) }
 
     // Run Tracy assembly - capture both successful and failed samples
     def tracyResults = tracyAssemble( samplesChannel )
-    
+
     // Log failed samples
-    tracyResults.failed.collect { sampleId, failedFile -> 
+    tracyResults.failed.each { sampleId ->
         log.error "Sample ${sampleId} FAILED: traces don't match or assembly failed"
     }
-    
+
     // Uncomment next lines when BLAST database is available:
     // blastn( tracyAssemble.out.consensus, params.db_path )
     // blastnTopHits(blastn.out.blastHits)
