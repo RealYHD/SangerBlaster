@@ -28,8 +28,7 @@ process tracyAssemble {
         tuple val(sampleId), path(forward), path(reverse)
 
     output:
-        tuple val(sampleId), path("*.fasta"), emit: consensus
-        tuple val(sampleId), path("*.FAILED"), emit: failed
+        tuple val(sampleId), path("*.consensus.fasta"), emit: consensus
 
     script:
         """
@@ -44,19 +43,19 @@ process tracyAssemble {
 
         # Check for mismatched traces error
         if grep -q "At least 2 traces are required" "${sampleId}.tracy.log"; then
-            echo "ERROR: Traces don't match for ${sampleId} - marking as FAILED"
-            touch ${sampleId}.FAILED
+            echo "ERROR: Traces don't match for ${sampleId} - Tracy failed"
             rm -f "${sampleId}.tracy.log"
-            exit 0  # Graceful failure, continue processing
+            exit 1  # Process failure, not graceful - will be caught by Nextflow
         fi
 
-        mv ${sampleId}.cons.fa ${sampleId}.consensus.fasta || {
-            echo "ERROR: Failed to move consensus file for ${sampleId}"
-            touch ${sampleId}.FAILED
+        # If Tracy succeeded (exit code 0), check if consensus file exists
+        if [ ! -f "${sampleId}.consensus.fasta" ]; then
+            echo "ERROR: Tracy did not produce consensus for ${sampleId}"
             rm -f "${sampleId}.tracy.log"
             exit 1
-        }
+        fi
 
+        echo "SUCCESS: Created consensus for ${sampleId}"
         rm -f "${sampleId}.tracy.log"
         """
 }
