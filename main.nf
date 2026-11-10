@@ -33,9 +33,15 @@ process tracyAssemble {
     script:
         """
         if [ -n "${params.ref}" ]; then
-            tracy assemble -o ${sampleId} -r ${params.ref} $forward $reverse || exit 1
+            tracy assemble -o ${sampleId} -r ${params.ref} $forward $reverse > "${sampleId}.tracy.log" 2>&1 || true
         else
-            tracy assemble -o ${sampleId} $forward $reverse || exit 1
+            tracy assemble -o ${sampleId} $forward $reverse > "${sampleId}.tracy.log" 2>&1 || true
+        fi
+
+        # Check for specific error message using regex
+        if grep -qE "At least 2 traces are required" "${sampleId}.tracy.log"; then
+            echo "ERROR: Traces don't match for ${sampleId} - Tracy failed" >> "${sampleId}.FAILED"
+            exit 0  # Skip this sample gracefully, continue pipeline
         fi
 
         mv ${sampleId}.cons.fa ${sampleId}.consensus.fasta || exit 1
