@@ -116,17 +116,17 @@ EOF
 
 2. Run the pipeline:
 ```bash
-# With Conda (recommended for SLURM, Bioconda packages)
-nextflow run main.nf \
-    --samples_tsv samples.tsv \
-    --publish_dir ./test_output \
-    --db /path/to/blastn_database
+|# With Conda (recommended for SLURM, Bioconda packages)
+|nextflow run main.nf -c slurm_conda.config \
+|    --samples_tsv samples.tsv \
+|    --publish_dir ./test_output \
+|    --db /path/to/blastn_database
 
-# Or with Singularity container (no Conda available)
-nextflow run main.nf -c singularity_nextflow.config \
-    --samples_tsv samples.tsv \
-    --publish_dir ./test_output \
-    --db /path/to/blastn_database
+|# Or with Singularity container (no Conda available)
+|nextflow run main.nf -c singularity_slurm.config \
+|    --samples_tsv samples.tsv \
+|    --publish_dir ./test_output \
+|    --db /path/to/blastn_database
 ```
 
 3. Check results:
