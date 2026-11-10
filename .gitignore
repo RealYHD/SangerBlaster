@@ -8,6 +8,8 @@ __pycache__/
 .nextflow.log
 .nextflow.log.*
 work/
+condaCache
+temp
 
 # Test artifacts
 test_*.tsv
