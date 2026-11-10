@@ -29,19 +29,45 @@ process tracyAssemble {
 
     output:
         tuple val(sampleId), path("*.fasta"), emit: consensus
+        tuple val(sampleId), path("*.FAILED"), emit: failed
 
     script:
         """
-        # Reference-guided or de-novo assembly of forward + reverse chromatograms
+        # Run Tracy assembly and capture output
+        tracy_output=$(mktemp)
+        
         if [ -n "${params.ref}" ]; then
             echo "Using reference mode with ${params.ref}"
-            tracy assemble -o ${sampleId} -r ${params.ref} $forward $reverse || exit 1
+            tracy assemble -o ${sampleId} -r ${params.ref} $forward $reverse > $tracy_output 2>&1
         else
             echo "Using de novo mode"
-            tracy assemble -o ${sampleId} $forward $reverse || exit 1
+            tracy assemble -o ${sampleId} $forward $reverse > $tracy_output 2>&1
         fi
-
-        mv ${sampleId}.cons.fa ${sampleId}.consensus.fasta || exit 1
+        
+        # Check for mismatched traces error
+        if grep -q "At least 2 traces are required" $tracy_output; then
+            echo "ERROR: Traces don't match for ${sampleId} - marking as FAILED"
+            touch ${sampleId}.FAILED
+            rm -f $tracy_output
+            exit 0  # Graceful failure, continue processing
+        fi
+        
+        # Check if tracy failed with non-zero exit code
+        if [ $? -ne 0 ]; then
+            echo "ERROR: Tracy assembly failed for ${sampleId}:"
+            cat $tracy_output
+            rm -f $tracy_output
+            exit 1
+        fi
+        
+        mv ${sampleId}.cons.fa ${sampleId}.consensus.fasta || {
+            echo "ERROR: Failed to move consensus file for ${sampleId}"
+            touch ${sampleId}.FAILED
+            rm -f $tracy_output
+            exit 1
+        }
+        
+        rm -f $tracy_output
         """
 }
 
@@ -160,7 +186,13 @@ workflow {
         | splitCsv( header: true, sep: '\t' )
         | map { row -> tuple( row.sampleId, file(row.read1), file(row.read2) ) }
 
-    tracyAssemble( samplesChannel )
+    // Run Tracy assembly - capture both successful and failed samples
+    def tracyResults = tracyAssemble( samplesChannel )
+    
+    // Log failed samples
+    tracyResults.failed.collect { sampleId, failedFile -> 
+        log.error "Sample ${sampleId} FAILED: traces don't match or assembly failed"
+    }
     
     // Uncomment next lines when BLAST database is available:
     // blastn( tracyAssemble.out.consensus, params.db_path )
