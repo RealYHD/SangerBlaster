@@ -65,15 +65,15 @@ process blastn {
     script:
         """
         # Check that BLAST database exists (check for index files)
-        if [ ! -f "${params.db}.ndb" ]; then
-            echo "BLAST database not found: ${params.db}.ndb" >&2
+        if [ ! -f "${params.db}.ndb" ] && [ ! -f "${params.db}.nhd" ]; then
+            echo "BLAST database not found: missing ${params.db}.ndb or ${params.db}.nhd" >&2
             exit 1
         fi
 
-        blastn \\
-            -query ${query} -db "${params.db}" \\
-            -outfmt 11 -out ${query.baseName}_blast.asn \\
-            -evalue ${params.evalue} \\
+        blastn \
+            -query ${query} -db "${params.db}" \
+            -outfmt 11 -out ${query.baseName}_blast.asn \
+            -evalue ${params.evalue} \
             -num_threads ${params.cpus} || exit 1
 
         blast_formatter \\
