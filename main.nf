@@ -30,25 +30,17 @@ process tracyAssemble {
 
     script:
         """
-        # Install wget if not available with timeout
-        if ! command -v wget &> /dev/null; then
-            echo "Installing wget..."
-            timeout 30 apt-get update -qq && timeout 60 apt-get install -y -qq wget || exit 1
+        # Ensure curl is available (often pre-installed, otherwise install it)
+        if ! command -v curl &> /dev/null; then
+            echo "Installing curl..."
+            timeout 30 apt-get update -qq && timeout 60 apt-get install -y -qq curl || exit 1
         fi
 
         # Ensure Tracy binary is available (static binary, downloaded once to workdir)
         if [ ! -f tracy ]; then
             echo "Downloading Tracy..."
-            if command -v wget &> /dev/null; then
-                timeout 30 wget -q -O tracy https://github.com/gear-genomics/tracy/releases/download/v0.9.1/tracy-v0.9.1-linux-amd64 || exit 1
-                chmod +x tracy
-            elif command -v curl &> /dev/null; then
-                timeout 30 curl -L -o tracy https://github.com/gear-genomics/tracy/releases/download/v0.9.1/tracy-v0.9.1-linux-amd64 || exit 1
-                chmod +x tracy
-            else
-                echo "ERROR: Neither wget nor curl is available to download Tracy!"
-                exit 1
-            fi
+            timeout 30 curl -L -o tracy https://github.com/gear-genomics/tracy/releases/download/v0.9.1/tracy-v0.9.1-linux-amd64 || exit 1
+            chmod +x tracy
             
             # Verify download succeeded and file is executable
             if [ ! -s tracy ] || [ ! -x tracy ]; then
