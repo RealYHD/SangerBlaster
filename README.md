@@ -124,7 +124,8 @@ nextflow run main.nf -c slurm_conda.config \
     --db /path/to/blastn_database/base_name
 ```
 
-> **Note:** The `--db` parameter should point to the **base name** of your BLAST database (the prefix of the `.ndb`, `.nhr`, etc. files). For example, if your BLAST database files are located at `/path/to/db/ompA_test.ndb`, use `--db /path/to/db/ompA_test`.
+> **⚠️ CRITICAL:** The `--db` parameter is **required** for the BLAST workflow. Without it, the pipeline will exit immediately with an error.  
+> The `--db` parameter should point to the **base name** of your BLAST database (the prefix of the `.ndb`, `.nhr`, etc. files). For example, if your BLAST database files are located at `/path/to/db/ompA_test.ndb`, use `--db /path/to/db/ompA_test`.
 
 3. Check results:
 ```bash
