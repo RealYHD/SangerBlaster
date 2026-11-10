@@ -48,12 +48,12 @@ process tracyAssemble {
             exit 1  # Process failure, not graceful - will be caught by Nextflow
         fi
 
-        # If Tracy succeeded (exit code 0), check if consensus file exists
-        if [ ! -f "${sampleId}.consensus.fasta" ]; then
-            echo "ERROR: Tracy did not produce consensus for ${sampleId}"
+        # Move Tracy's output to expected consensus filename
+        mv ${sampleId}.cons.fa ${sampleId}.consensus.fasta || {
+            echo "ERROR: Failed to move consensus file for ${sampleId}"
             rm -f "${sampleId}.tracy.log"
             exit 1
-        fi
+        }
 
         echo "SUCCESS: Created consensus for ${sampleId}"
         rm -f "${sampleId}.tracy.log"
@@ -175,13 +175,8 @@ workflow {
         | splitCsv( header: true, sep: '\t' )
         | map { row -> tuple( row.sampleId, file(row.read1), file(row.read2) ) }
 
-    // Run Tracy assembly - capture both successful and failed samples
+    // Run Tracy assembly
     def tracyResults = tracyAssemble( samplesChannel )
-
-    // Log failed samples
-    tracyResults.failed.each { sampleId ->
-        log.error "Sample ${sampleId} FAILED: traces don't match or assembly failed"
-    }
 
     // Run BLAST pipeline (requires --db parameter)
     blastn( tracyAssemble.out.consensus, params.db_path )
