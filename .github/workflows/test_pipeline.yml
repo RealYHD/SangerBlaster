@@ -30,12 +30,10 @@ jobs:
           which tracy
           which blastn
 
-      - name: Install Nextflow via Conda
-        run: |
-          source /opt/miniconda3/etc/profile.d/conda.sh
-          conda activate genosanger
-          conda install -y -c conda-forge nextflow
-          nextflow -version
+      - name: Install Nextflow
+        uses: nf-core/setup-nextflow@v2
+        with:
+          version: 26.10.5
 
       - name: Build BLAST database for testing
         run: |
