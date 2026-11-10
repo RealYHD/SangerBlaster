@@ -37,7 +37,7 @@ GenoSanger retains the original sangerFlow's BLAST-based species identification 
 
 ## AI Content Disclosure
 
-|This repository contains code generated or significantly modified by artificial intelligence (Hermes Agent). The original pipeline (sangerFlow) was written by M. Asaduzzaman Prodhan. The GenoSanger modifications — including the Tracy integration, `main.nf` rewrite, config file definitions, and documentation — were produced with AI assistance.
+This repository contains code generated or significantly modified by artificial intelligence (Hermes Agent). The original pipeline (sangerFlow) was written by M. Asaduzzaman Prodhan. The GenoSanger modifications — including the Tracy integration, `main.nf` rewrite, config file definitions, and documentation — were produced with AI assistance.
 
 ## How to use GenoSanger
 
@@ -97,11 +97,18 @@ SAMPLE002	SAMPLE002_R1.scf	SAMPLE002_R2.scf
 
 See: https://github.com/asadprodhan/blastn
 
+**Quick test option:** Use the provided sample BLAST database for initial testing (created in this repo's `test_db/` directory):
+```bash
+# Build sample BLAST database (already done in test_db/)
+# If you need to rebuild:
+makeblastdb -in test_db/ompA_test.fasta -dbtype nucl -out test_db/ompA_test
+```
+
 ### Step 3: Run GenoSanger (Quick Start Example)
 
 **Prerequisites:**
 - SCF/AB1 chromatogram files (forward and reverse pairs)
-- A BLAST database (download from NCBI)
+- A BLAST database (download from NCBI or use `test_db/`)
 - Conda environment with `tracy` and `blast` installed from Bioconda **OR** Singularity container built
 
 **Example using test data in this repository:**
@@ -116,17 +123,17 @@ EOF
 
 2. Run the pipeline:
 ```bash
-|# With Conda (recommended for SLURM, Bioconda packages)
-|nextflow run main.nf -c slurm_conda.config \
-|    --samples_tsv samples.tsv \
-|    --publish_dir ./test_output \
-|    --db /path/to/blastn_database
+# With Conda (recommended for SLURM, Bioconda packages)
+nextflow run main.nf -c slurm_conda.config \
+    --samples_tsv samples.tsv \
+    --publish_dir ./test_output \
+    --db /path/to/blastn_database
 
-|# Or with Singularity container (no Conda available)
-|nextflow run main.nf -c singularity_slurm.config \
-|    --samples_tsv samples.tsv \
-|    --publish_dir ./test_output \
-|    --db /path/to/blastn_database
+# Or with Singularity container (no Conda available)
+nextflow run main.nf -c singularity_slurm.config \
+    --samples_tsv samples.tsv \
+    --publish_dir ./test_output \
+    --db /path/to/blastn_database
 ```
 
 3. Check results:
@@ -139,13 +146,13 @@ ls test_output/temp/  # Consensus FASTA files
 
 The pipeline includes resource definitions (CPU, memory, time) for optimized SLURM execution. 
 
-|**Using Conda:** Use `slurm_conda.config` for optimized SLURM execution with resource definitions.
+**Using Conda:** Use `slurm_conda.config` for optimized SLURM execution with resource definitions.
 
-|**Using Singularity:** Use `singularity_slurm.config` which contains:
-|- `tracyAssemble`: 4 CPUs, 4GB RAM, 60min
-|- `blastn`: 18 CPUs, 8GB RAM, 240min  
-|- `blastnTopHits`: 1 CPU, 512MB RAM, 2min
-|- `blastHits_concat`: 1 CPU, 512MB RAM, 2min
+**Using Singularity:** Use `singularity_slurm.config` which contains:
+- `tracyAssemble`: 4 CPUs, 4GB RAM, 60min
+- `blastn`: 18 CPUs, 8GB RAM, 240min  
+- `blastnTopHits`: 1 CPU, 512MB RAM, 2min
+- `blastHits_concat`: 1 CPU, 512MB RAM, 2min
 
 ## Outputs
 

@@ -184,8 +184,8 @@ workflow {
         log.error "Sample ${sampleId} FAILED: traces don't match or assembly failed"
     }
 
-    // Uncomment next lines when BLAST database is available:
-    // blastn( tracyAssemble.out.consensus, params.db_path )
-    // blastnTopHits(blastn.out.blastHits)
-    // blastHits_concat(blastnTopHits.out.topHits.collect())
+    // Run BLAST pipeline (requires --db parameter)
+    blastn( tracyAssemble.out.consensus, params.db_path )
+    blastnTopHits(blastn.out.blastHits)
+    blastHits_concat(blastnTopHits.out.topHits.collect())
 }
