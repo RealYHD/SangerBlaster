@@ -33,7 +33,7 @@ GenoSanger retains the original sangerFlow's BLAST-based species identification 
 - Reads SCF/AB1/ABI chromatogram files natively
 - Assembles forward and reverse traces — reference-guided if `--ref` is given, or de-novo otherwise
 - Produces a consensus FASTA with uncovered positions left as N/ambiguous (no forced filling)
-- Tracy is installed via Bioconda (recommended) or pre-bundled in the container
+- Tracy is installed via Bioconda (recommended)
 
 ## AI Content Disclosure
 
@@ -57,13 +57,6 @@ source activate genosanger
 tracy --version  # Should show v0.9.1+ or newer
 ```
 
-**Option B: Use containers (if Conda not available)**
-
-- Install [Singularity](https://docs.sylabs.io/) (or Docker)
-- Build container: `singularity pull docker://genosanger/ubuntu20.04-tracy`
-
-> **Note:** Tracy v0.9.1+ is installed via Bioconda (preferred) or pre-bundled in the container. No separate GitHub downloads needed.
-
 ### Step 1b: Verify system requirements (recommended)
 
 Before running the pipeline, verify all requirements are met:
@@ -73,7 +66,7 @@ Before running the pipeline, verify all requirements are met:
 ```
 
 This script checks for:
-- ✓ Conda/Mamba with `tracy` package installed from Bioconda **OR** container runtime
+- ✓ Conda/Mamba with `tracy` package installed from Bioconda
 - ✓ Nextflow version
 - ✓ BLAST database availability (if specified)
 
@@ -109,7 +102,7 @@ makeblastdb -in test_db/ompA_test.fasta -dbtype nucl -out test_db/ompA_test
 **Prerequisites:**
 - SCF/AB1 chromatogram files (forward and reverse pairs)
 - A BLAST database (download from NCBI or use `test_db/`)
-- Conda environment with `tracy` and `blast` installed from Bioconda **OR** Singularity container built
+- Conda environment with `tracy` and `blast` installed from Bioconda
 
 **Example using test data in this repository:**
 
@@ -121,16 +114,9 @@ LHMD002	./SangerSequencingChromatograms/LHMD002-07_F1_1.ab1	./SangerSequencingCh
 EOF
 ```
 
-2. Run the pipeline:
+2. Run the pipeline (Conda method tested E2E on local Linux):
 ```bash
-# With Conda (recommended for SLURM, Bioconda packages)
 nextflow run main.nf -c slurm_conda.config \
-    --samples_tsv samples.tsv \
-    --publish_dir ./test_output \
-    --db /path/to/blastn_database
-
-# Or with Singularity container (no Conda available)
-nextflow run main.nf -c singularity_slurm.config \
     --samples_tsv samples.tsv \
     --publish_dir ./test_output \
     --db /path/to/blastn_database
@@ -144,15 +130,7 @@ ls test_output/temp/  # Consensus FASTA files
 
 ## Resource Definitions
 
-The pipeline includes resource definitions (CPU, memory, time) for optimized SLURM execution. 
-
-**Using Conda:** Use `slurm_conda.config` for optimized SLURM execution with resource definitions.
-
-**Using Singularity:** Use `singularity_slurm.config` which contains:
-- `tracyAssemble`: 4 CPUs, 4GB RAM, 60min
-- `blastn`: 18 CPUs, 8GB RAM, 240min  
-- `blastnTopHits`: 1 CPU, 512MB RAM, 2min
-- `blastHits_concat`: 1 CPU, 512MB RAM, 2min
+The pipeline includes resource definitions (CPU, memory, time) for optimized SLURM execution. Use `slurm_conda.config` for the appropriate configuration.
 
 ## Outputs
 
