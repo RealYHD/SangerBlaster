@@ -47,6 +47,9 @@ jobs:
           # Initialize conda
           source /opt/miniconda3/etc/profile.d/conda.sh
           
+          # Get absolute path for database
+          DB_PATH="$(cd data && pwd)/ompA_test"
+          
           # Create minimal test samples file with real SCF files from repo
           cat > test_samples.tsv << 'EOF'
           sampleId	read1	read2
@@ -58,7 +61,7 @@ jobs:
           nextflow run main.nf \
             --samples_tsv test_samples.tsv \
             --publish_dir ./test_output \
-            --db data/ompA_test \
+            --db "$DB_PATH" \
             --cpus 2
 
           echo "Full E2E pipeline completed"
