@@ -76,9 +76,9 @@ jobs:
             exit 1
           fi
 
-          if [ -f test_output/results/LHMD002_consensus_blast_sort.tsv ]; then
+          if [ -f test_output/results/LHMD002.consensus_blast_sort.tsv ]; then
             echo "✓ BLAST results generated"
-            head -3 test_output/results/LHMD002_consensus_blast_sort.tsv
+            head -3 test_output/results/LHMD002.consensus_blast_sort.tsv
           else
             echo "✗ ERROR: Expected BLAST file not found"
             exit 1
