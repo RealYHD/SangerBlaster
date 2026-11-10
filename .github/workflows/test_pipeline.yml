@@ -1,4 +1,4 @@
-name: Test Pipeline
+name: Test Pipeline (Full E2E)
 
 on:
   push:
@@ -14,42 +14,74 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Docker
+      - name: Set up Miniconda
         run: |
-          # Install Docker (already available in GitHub Actions)
-          echo "Docker is available"
-          docker --version
+          wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+          bash miniconda.sh -b -p /opt/miniconda3
+          echo "/opt/miniconda3/bin" >> $GITHUB_PATH
+          rm miniconda.sh
+
+      - name: Install dependencies via Conda
+        run: |
+          conda create -y -n genosanger -c conda-forge -c bioconda tracy blast makeblastdb
+          conda activate genosanger
+          which tracy
+          which blastn
 
       - name: Download Nextflow
         run: |
           wget -q https://get.nextflow.io/nf/ -O nextflow
           chmod +x nextflow
-          mv nextflow /usr/local/bin/
+          sudo mv nextflow /usr/local/bin/
           nextflow -version
 
-      - name: Test Tracy assembly on sample data
+      - name: Build BLAST database for testing
         run: |
-          # Create a minimal test samples file with real SCF files from repo
+          conda activate genosanger
+          makeblastdb -in data/ompA_test.fasta -dbtype nucl -out data/ompA_test
+          echo "BLAST database built successfully"
+
+      - name: Test full pipeline with real SCF data and BLAST
+        run: |
+          # Create minimal test samples file with real SCF files from repo
           cat > test_samples.tsv << 'EOF'
           sampleId	read1	read2
           LHMD002	./SangerSequencingChromatograms/LHMD002-07_F1_1.ab1	./SangerSequencingChromatograms/LHMD002-07_R1_1.ab1
           EOF
 
-          # Run pipeline with minimal config
-          nextflow run main.nf -c docker_local.config \
+          # Run full pipeline (Tracy + BLAST) with test database
+          conda activate genosanger
+          nextflow run main.nf \
             --samples_tsv test_samples.tsv \
             --publish_dir ./test_output \
-            --db ""  # No BLAST needed for this test
+            --db data/ompA_test \
+            --cpus 2
 
-          echo "Pipeline completed successfully"
+          echo "Full E2E pipeline completed"
 
-      - name: Verify output exists
+      - name: Verify output files
         run: |
           if [ -f test_output/temp/LHMD002.consensus.fasta ]; then
-            echo "Output file generated successfully"
+            echo "✓ Consensus FASTA generated"
             head -3 test_output/temp/LHMD002.consensus.fasta
           else
-            echo "ERROR: Expected output file not found"
+            echo "✗ ERROR: Expected consensus file not found"
+            exit 1
+          fi
+
+          if [ -f test_output/results/LHMD002_consensus_blast_sort.tsv ]; then
+            echo "✓ BLAST results generated"
+            head -3 test_output/results/LHMD002_consensus_blast_sort.tsv
+          else
+            echo "✗ ERROR: Expected BLAST file not found"
+            exit 1
+          fi
+
+          if [ -f test_output/results/concatenatedHits_withHeaders.tsv ]; then
+            echo "✓ Concatenated hits file generated"
+            head -3 test_output/results/concatenatedHits_withHeaders.tsv
+          else
+            echo "✗ ERROR: Expected concatenated hits file not found"
             exit 1
           fi
 
