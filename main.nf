@@ -76,16 +76,16 @@ process blastn {
             -evalue ${params.evalue} \
             -num_threads ${params.cpus} || exit 1
 
-        blast_formatter \\
-            -archive ${query.baseName}_blast.asn \\
+        blast_formatter \
+            -archive ${query.baseName}_blast.asn \
             -outfmt 5 -out ${query.baseName}_blast.xml || exit 1
 
-        blast_formatter \\
+        blast_formatter \
             -archive ${query.baseName}_blast.asn \\
             -html -out ${query.baseName}_blast.html || exit 1
 
-        blast_formatter \\
-            -archive ${query.baseName}_blast.asn \\
+        blast_formatter \
+            -archive ${query.baseName}_blast.asn \
             -outfmt "6 qaccver saccver pident length evalue bitscore mismatch gapopen qstart qend sstart send stitle" -out ${query.baseName}_blast_unsort.tsv || exit 1
 
         sort -n -r -k 6 ${query.baseName}_blast_unsort.tsv > ${query.baseName}_blast_sort.tsv || exit 1

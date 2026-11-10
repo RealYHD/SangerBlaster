@@ -11,6 +11,7 @@ work/
 condaCache
 temp
 nextflow.config
+results
 
 # Test artifacts
 test_*.tsv
