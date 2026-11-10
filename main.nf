@@ -63,21 +63,14 @@ process blastn {
 
     script:
         """
-        # Convert DB path to absolute if relative
-        if [[ "${params.db}" == /* ]]; then
-            db_path="${params.db}"
-        else
-            db_path="$(pwd)/${params.db}"
-        fi
-        
         # Check that BLAST database exists (check for index files)
-        if [ ! -f "${db_path}.ndb" ] && [ ! -f "${db_path}.nhd" ]; then
-            echo "BLAST database not found: missing ${db_path}.ndb or ${db_path}.nhd" >&2
+        if [ ! -f "${params.db}.ndb" ] && [ ! -f "${params.db}.nhd" ]; then
+            echo "BLAST database not found: missing ${params.db}.ndb or ${params.db}.nhd" >&2
             exit 1
         fi
 
         blastn \
-            -query ${query} -db "${db_path}" \
+            -query ${query} -db "${params.db}" \
             -outfmt 11 -out ${query.baseName}_blast.asn \
             -evalue ${params.evalue} \
             -num_threads ${params.cpus} || exit 1
