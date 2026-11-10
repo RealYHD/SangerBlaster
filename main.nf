@@ -29,7 +29,6 @@ process tracyAssemble {
 
     output:
         tuple val(sampleId), path("*.consensus.fasta", optional: true), emit: consensus
-        path "*.FAILED", emit: failed
 
     script:
         """
@@ -40,12 +39,12 @@ process tracyAssemble {
         fi
 
         # Check for specific error message using case-insensitive regex
-        if grep -qiE "at least 2 traces are required" "${sampleId}.tracy.log"; then
+        if grep -qiE "at least 2 traces are required" ${sampleId}.tracy.log; then
             echo "ERROR: Traces don't match for ${sampleId} - Tracy failed" >> "${sampleId}.FAILED"
             exit 0  # Skip this sample gracefully, continue pipeline
+        else
+            mv ${sampleId}.cons.fa ${sampleId}.consensus.fasta || exit 1
         fi
-
-        mv ${sampleId}.cons.fa ${sampleId}.consensus.fasta || exit 1
         """
 }
 
