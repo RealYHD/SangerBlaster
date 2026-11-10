@@ -37,7 +37,7 @@ GenoSanger retains the original sangerFlow's BLAST-based species identification 
 
 ## AI Content Disclosure
 
-This repository contains code generated or significantly modified by artificial intelligence (Hermes Agent). The original pipeline (sangerFlow) was written by M. Asaduzzaman Prodhan. The GenoSanger modifications — including the Tracy integration, `main.nf` rewrite, `nextflow.config` resource definitions, and documentation — were produced with AI assistance.
+|This repository contains code generated or significantly modified by artificial intelligence (Hermes Agent). The original pipeline (sangerFlow) was written by M. Asaduzzaman Prodhan. The GenoSanger modifications — including the Tracy integration, `main.nf` rewrite, config file definitions, and documentation — were produced with AI assistance.
 
 ## How to use GenoSanger
 
