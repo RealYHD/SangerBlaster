@@ -1,3 +1,5 @@
+# GenoSanger — Sanger amplicon sequencing analysis with Tracy
+
 <h1 align="center">GenoSanger — Sanger amplicon sequencing analysis with Tracy</h1>
 
 <p align="center">
@@ -31,7 +33,7 @@ GenoSanger retains the original sangerFlow's BLAST-based species identification 
 - Reads SCF/AB1/ABI chromatogram files natively
 - Assembles forward and reverse traces — reference-guided if `--ref` is given, or de-novo otherwise
 - Produces a consensus FASTA with uncovered positions left as N/ambiguous (no forced filling)
-- Auto-downloads Tracy v0.9.1 static binary on first run
+- Tracy is installed via Bioconda (recommended) or pre-bundled in the container
 
 ## AI Content Disclosure
 
@@ -120,7 +122,7 @@ nextflow run main.nf \
     --publish_dir ./test_output \
     --db /path/to/blastn_database
 
-# Or with Singularity container
+# Or with Singularity container (no Conda available)
 nextflow run main.nf -c singularity_nextflow.config \
     --samples_tsv samples.tsv \
     --publish_dir ./test_output \
@@ -133,7 +135,17 @@ ls test_output/temp/  # Consensus FASTA files
 # LHMD002.consensus.fasta
 ```
 
-> **Note:** The pipeline currently runs with hardcoded test samples in `main.nf` for initial testing. Full `samples.tsv` parsing is implemented but requires modification to `main.nf` to enable sample channel. See `main.nf` workflow section for details.
+## Resource Definitions
+
+The pipeline includes resource definitions (CPU, memory, time) for optimized SLURM execution. 
+
+**Using Conda:** No config file needed - resources are set in `main.nf` via `process` block.
+
+**Using Singularity:** Use `singularity_nextflow.config` which contains:
+- `tracyAssemble`: 4 CPUs, 4GB RAM, 60min
+- `blastn`: 18 CPUs, 8GB RAM, 240min  
+- `blastnTopHits`: 1 CPU, 512MB RAM, 2min
+- `blastHits_concat`: 1 CPU, 512MB RAM, 2min
 
 ## Outputs
 
