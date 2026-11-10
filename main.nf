@@ -3,7 +3,6 @@
 nextflow.enable.dsl=2
 
 params.samples_tsv = params.samples_tsv ?: './samples.tsv'
-params.db = ""
 params.evalue = '0.1'
 params.topHits = '5'
 params.cpus = '18'
@@ -88,6 +87,7 @@ process blastn {
             -archive ${query.baseName}_blast.asn \
             -outfmt "6 qaccver saccver pident length evalue bitscore mismatch gapopen qstart qend sstart send stitle" -out ${query.baseName}_blast_unsort.tsv || exit 1
 
+        # Sort by bitscore
         sort -n -r -k 6 ${query.baseName}_blast_unsort.tsv > ${query.baseName}_blast_sort.tsv || exit 1
         """
 }
@@ -143,11 +143,6 @@ workflow {
     // Validate required parameters upfront (fail fast)
     if (!params.db) {
         throw new IllegalArgumentException("ERROR: --db parameter is required for BLAST workflow.\nUsage: nextflow run main.nf --db /path/to/database/base\n")
-    }
-
-    // Normalize database path to absolute path (for process working directory independence)
-    if (!params.db.startsWith('/')) {
-        params.db = new File(params.db).canonicalPath
     }
 
     // Read samples.tsv: sampleId, read1 (forward SCF), read2 (reverse SCF)
