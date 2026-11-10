@@ -28,7 +28,8 @@ process tracyAssemble {
         tuple val(sampleId), path(forward), path(reverse)
 
     output:
-        tuple val(sampleId), path("*.consensus.fasta"), emit: consensus
+        tuple val(sampleId), path("*.consensus.fasta", optional: true), emit: consensus
+        path "*.FAILED", emit: failed
 
     script:
         """
@@ -164,8 +165,11 @@ workflow {
     // Run Tracy assembly
     tracyAssemble( samplesChannel )
 
-    // Run BLAST pipeline (requires --db parameter)
+    // Run BLAST pipeline (requires --db parameter) only on successful assemblies
     blastn( tracyAssemble.out.consensus, params.db_path )
     blastnTopHits(blastn.out.blastHits)
     blastHits_concat(blastnTopHits.out.topHits.collect())
+
+    // Log failed samples
+    tracyAssemble.failed.view { id -> log.error "FAILED: $id" }
 }
