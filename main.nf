@@ -32,31 +32,39 @@ process tracyAssemble {
 
     script:
         """
-        # Run Tracy assembly - let it write directly to log file
+        echo "Tracy assembly for ${sampleId}..."
+        # Verify input files exist before running Tracy
+        if [ ! -f "$forward" ]; then
+            echo "ERROR: Forward trace file not found: $forward"
+            exit 1
+        fi
+        if [ ! -f "$reverse" ]; then
+            echo "ERROR: Reverse trace file not found: $reverse"
+            exit 1
+        fi
+        
+        # Run Tracy assembly - let it write directly to stdout/stderr
         if [ -n "${params.ref}" ]; then
             echo "Using reference mode with ${params.ref}"
-            tracy assemble -o ${sampleId} -r ${params.ref} $forward $reverse > "${sampleId}.tracy.log" 2>&1 || exit 1
+            tracy assemble -o ${sampleId} -r ${params.ref} $forward $reverse || exit 1
         else
             echo "Using de novo mode"
-            tracy assemble -o ${sampleId} $forward $reverse > "${sampleId}.tracy.log" 2>&1 || exit 1
+            tracy assemble -o ${sampleId} $forward $reverse || exit 1
         fi
-
+        
         # Check for mismatched traces error
-        if grep -q "At least 2 traces are required" "${sampleId}.tracy.log"; then
-            echo "ERROR: Traces don't match for ${sampleId} - Tracy failed"
-            rm -f "${sampleId}.tracy.log"
-            exit 1  # Process failure, not graceful - will be caught by Nextflow
+        if [ ! -f "${sampleId}.cons.fa" ]; then
+            echo "ERROR: Tracy failed to produce consensus file for ${sampleId}"
+            exit 1
         fi
-
+        
         # Move Tracy's output to expected consensus filename
         mv ${sampleId}.cons.fa ${sampleId}.consensus.fasta || {
             echo "ERROR: Failed to move consensus file for ${sampleId}"
-            rm -f "${sampleId}.tracy.log"
             exit 1
         }
-
+        
         echo "SUCCESS: Created consensus for ${sampleId}"
-        rm -f "${sampleId}.tracy.log"
         """
 }
 
