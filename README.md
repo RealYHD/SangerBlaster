@@ -139,13 +139,13 @@ ls test_output/temp/  # Consensus FASTA files
 
 The pipeline includes resource definitions (CPU, memory, time) for optimized SLURM execution. 
 
-**Using Conda:** No config file needed - resources are set in `main.nf` via `process` block.
+|**Using Conda:** Use `slurm_conda.config` for optimized SLURM execution with resource definitions.
 
-**Using Singularity:** Use `singularity_nextflow.config` which contains:
-- `tracyAssemble`: 4 CPUs, 4GB RAM, 60min
-- `blastn`: 18 CPUs, 8GB RAM, 240min  
-- `blastnTopHits`: 1 CPU, 512MB RAM, 2min
-- `blastHits_concat`: 1 CPU, 512MB RAM, 2min
+|**Using Singularity:** Use `singularity_slurm.config` which contains:
+|- `tracyAssemble`: 4 CPUs, 4GB RAM, 60min
+|- `blastn`: 18 CPUs, 8GB RAM, 240min  
+|- `blastnTopHits`: 1 CPU, 512MB RAM, 2min
+|- `blastHits_concat`: 1 CPU, 512MB RAM, 2min
 
 ## Outputs
 
