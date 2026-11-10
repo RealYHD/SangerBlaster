@@ -10,6 +10,7 @@ __pycache__/
 work/
 condaCache
 temp
+nextflow.config
 
 # Test artifacts
 test_*.tsv
