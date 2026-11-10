@@ -145,6 +145,11 @@ workflow {
         throw new IllegalArgumentException("ERROR: --db parameter is required for BLAST workflow.\nUsage: nextflow run main.nf --db /path/to/database/base\n")
     }
 
+    // Normalize database path to absolute path (for process working directory independence)
+    if (!params.db.startsWith('/')) {
+        params.db = new File(params.db).canonicalPath
+    }
+
     // Read samples.tsv: sampleId, read1 (forward SCF), read2 (reverse SCF)
     // First, check the header manually before parsing
     def header = new File("${params.samples_tsv}").readLines().getAt(0)
