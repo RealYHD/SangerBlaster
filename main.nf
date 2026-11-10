@@ -9,8 +9,6 @@ params.topHits = '5'
 params.cpus = '18'
 params.publish_dir = './'
 params.ref = ''
-params.db_name = params.db ? file(params.db).name : ''
-params.db_path = params.db ? file(params.db).parent : ''
 
 // Tracy-based consensus assembly process with built-in TSV header check
 process tracyAssemble {
@@ -57,7 +55,6 @@ process blastn {
 
     input:
     tuple val(query_id), path(query)
-    path db
 
     output:
     path ("${query.baseName}_blast_sort.tsv"), emit: blastHits
@@ -66,12 +63,14 @@ process blastn {
 
     script:
         """
-        if [ ! -d "${db}/" ]; then
+        # Check that BLAST database exists (check for index files)
+        if [ ! -f "${params.db}.ndb" ]; then
+            echo "BLAST database not found: ${params.db}.ndb" >&2
             exit 1
         fi
 
         blastn \\
-            -query ${query} -db "${db}/${params.db_name}" \\
+            -query ${query} -db "${params.db}" \\
             -outfmt 11 -out ${query.baseName}_blast.asn \\
             -evalue ${params.evalue} \\
             -num_threads ${params.cpus} || exit 1
@@ -97,6 +96,7 @@ process blastnTopHits {
     tag "${query.baseName}"
     
     publishDir "${params.publish_dir}/temp", mode: 'copy'
+
 
     input:
     path(query)
@@ -145,7 +145,7 @@ workflow {
     A Sanger sequencing-based bioinformatics pipeline for pest and pathogen diagnosis
 
     Asad Prodhan
-    =======================================
+    ========================================
 
     """
     .stripIndent()
@@ -165,10 +165,7 @@ workflow {
     tracyAssemble( samplesChannel )
 
     // Run BLAST pipeline (requires --db parameter) only on successful assemblies
-    blastn( tracyAssemble.out.consensus, params.db_path )
+    blastn( tracyAssemble.out.consensus )
     blastnTopHits(blastn.out.blastHits)
     blastHits_concat(blastnTopHits.out.topHits.collect())
-
-    // Log failed samples
-    tracyAssemble.failed.view { id -> log.error "FAILED: $id" }
 }
