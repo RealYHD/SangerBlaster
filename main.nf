@@ -26,7 +26,8 @@ process tracyAssemble {
         tuple val(sampleId), path(forward), path(reverse)
 
     output:
-        tuple val(sampleId), path("*.consensus.fasta", optional: true), emit: consensus
+        tuple val(sampleId), path("*.consensus.fasta"), optional: true, emit: consensus
+        path "*.FAILED", optional: true, emit: failed
 
     script:
         """
@@ -139,17 +140,6 @@ process blastHits_concat {
 
 // Workflow
 workflow {
-    log.info """
-
-    s a n g e r F L O W
-    A Sanger sequencing-based bioinformatics pipeline for pest and pathogen diagnosis
-
-    Asad Prodhan
-    ========================================
-
-    """
-    .stripIndent()
-
     // Read samples.tsv: sampleId, read1 (forward SCF), read2 (reverse SCF)
     // First, check the header manually before parsing
     def header = new File("${params.samples_tsv}").readLines().getAt(0)
@@ -168,4 +158,7 @@ workflow {
     blastn( tracyAssemble.out.consensus )
     blastnTopHits(blastn.out.blastHits)
     blastHits_concat(blastnTopHits.out.topHits.collect())
+
+    // Log failed samples
+    tracyAssemble.out.failed.view { id -> log.error "FAILED: $id" }
 }
