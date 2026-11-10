@@ -43,6 +43,14 @@ process tracyAssemble {
             exit 1
         fi
         
+        # Check if conda environment is available (for Tracy)
+        if ! command -v tracy &> /dev/null; then
+            echo "ERROR: Tracy not installed. Ensure conda bioconda::tracy directive works or manually install:"
+            echo "  mamba create -n genosanger -c conda-forge -c bioconda tracy blast"
+            echo "  source activate genosanger (or use nextflow -c slurm_conda.config with conda enabled)"
+            exit 1
+        fi
+        
         # Run Tracy assembly - let it write directly to stdout/stderr
         if [ -n "${params.ref}" ]; then
             echo "Using reference mode with ${params.ref}"
