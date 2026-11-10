@@ -15,6 +15,8 @@ params.db_path = params.db ? file(params.db).parent : ''
 // Tracy-based consensus assembly process with built-in TSV header check
 process tracyAssemble {
     tag "${sampleId}"
+    
+    conda 'conda-forge::tracy'
 
     publishDir (
         path: "${params.publish_dir}/temp",
@@ -30,32 +32,13 @@ process tracyAssemble {
 
     script:
         """
-        # Ensure curl is available (often pre-installed, otherwise install it)
-        if ! command -v curl &> /dev/null; then
-            echo "Installing curl..."
-            timeout 30 apt-get update -qq && timeout 60 apt-get install -y -qq curl || exit 1
-        fi
-
-        # Ensure Tracy binary is available (static binary, downloaded once to workdir)
-        if [ ! -f tracy ]; then
-            echo "Downloading Tracy..."
-            timeout 30 curl -L -o tracy https://github.com/gear-genomics/tracy/releases/download/v0.9.1/tracy-v0.9.1-linux-amd64 || exit 1
-            chmod +x tracy
-            
-            # Verify download succeeded and file is executable
-            if [ ! -s tracy ] || [ ! -x tracy ]; then
-                echo "ERROR: Failed to download or make Tracy executable!"
-                exit 1
-            fi
-        fi
-
         # Reference-guided or de-novo assembly of forward + reverse chromatograms
         if [ -n "${params.ref}" ]; then
             echo "Using reference mode with ${params.ref}"
-            timeout 3600 ./tracy assemble -o ${sampleId} -r ${params.ref} $forward $reverse || exit 1
+            tracy assemble -o ${sampleId} -r ${params.ref} $forward $reverse || exit 1
         else
             echo "Using de novo mode"
-            timeout 3600 ./tracy assemble -o ${sampleId} $forward $reverse || exit 1
+            tracy assemble -o ${sampleId} $forward $reverse || exit 1
         fi
 
         mv ${sampleId}.cons.fa ${sampleId}.consensus.fasta || exit 1

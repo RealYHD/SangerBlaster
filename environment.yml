@@ -1,0 +1,6 @@
+name: genosanger
+channels:
+  - conda-forge
+dependencies:
+  - tracy>=0.9.1
+  - blast

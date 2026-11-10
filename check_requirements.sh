@@ -6,7 +6,53 @@ set -e  # Exit on any error
 echo "=== GenoSanger Pipeline Requirement Check ==="
 echo ""
 
-# Check container runtime
+# Check Conda/Mamba environment (recommended)
+check_conda() {
+    if command -v conda &> /dev/null || command -v mamba &> /dev/null; then
+        echo "✓ Conda/Mamba is available"
+        
+        # Check for tracy package
+        if mamba list 2>/dev/null | grep -q tracy || conda list 2>/dev/null | grep -q tracy; then
+            echo "✓ Tracy is installed in environment"
+            
+            # Find which environment has tracy
+            if command -v mamba &> /dev/null; then
+                env=$(mamba list -f regex 'tracy' 2>/dev/null | head -1 | awk '{print $2}')
+                echo "  Environment: $env"
+            else
+                env=$(conda list | grep tracy)
+                echo "  Package: $env"
+            fi
+            
+            # Verify tracy command works
+            if command -v tracy &> /dev/null; then
+                tracy --version | head -1
+                echo "✓ Tracy version OK"
+            else
+                echo "⚠ Warning: tracy package found but command not available"
+                echo "  Try: source activate genosanger"
+            fi
+            
+            return 0
+        else
+            echo "✗ ERROR: Tracy package not installed in Conda environment!"
+            echo ""
+            echo "Install with:"
+            echo "  mamba create -y -n genosanger -c conda-forge tracy blast"
+            echo "  source activate genosanger"
+            exit 1
+        fi
+    else
+        echo "✗ ERROR: Conda/Mamba is not installed!"
+        echo ""
+        echo "To install:"
+        echo "  Miniconda: https://docs.conda.io/en/latest/miniconda.html"
+        echo "  Mamba: conda install -y mamba -c conda-forge"
+        exit 1
+    fi
+}
+
+# Fallback: Check container runtime (if Conda not available)
 check_container() {
     if command -v docker &> /dev/null; then
         echo "✓ Docker is available"
@@ -17,26 +63,7 @@ check_container() {
         singularity version 2>&1 | head -1
         return 0
     else
-        echo "✗ ERROR: Neither Docker nor Singularity is installed!"
-        echo ""
-        echo "To install:"
-        echo "  Docker:   https://docs.docker.com/engine/install/"
-        echo "  Singularity: apt-get install singularity-container"
-        exit 1
-    fi
-}
-
-# Check download tools
-check_download_tools() {
-    if command -v wget &> /dev/null || command -v curl &> /dev/null; then
-        echo "✓ wget or curl is available"
-        return 0
-    else
-        echo "✗ ERROR: Neither wget nor curl is available!"
-        echo ""
-        echo "To install:"
-        echo "  apt-get install wget curl"
-        exit 1
+        return 1
     fi
 }
 
@@ -70,9 +97,18 @@ check_nextflow() {
 
 # Main check
 echo "Checking requirements..."
-check_container
-check_download_tools
-check_nextflow
+
+if check_conda; then
+    # Conda/tracy is available - this is the recommended path
+    check_nextflow
+elif check_container; then
+    # Container fallback - but warn that this is less preferred
+    echo "⚠ Warning: Using container runtime instead of Conda"
+    check_nextflow
+else
+    echo "✗ ERROR: Neither Conda/tracy nor container runtime available!"
+    exit 1
+fi
 
 echo ""
 echo "=== All requirements met! Pipeline can proceed ==="

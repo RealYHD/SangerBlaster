@@ -41,11 +41,26 @@ This repository contains code generated or significantly modified by artificial 
 
 ### Step 1: Install required software
 
-- Install [Nextflow](https://www.nextflow.io/)
-- Install [Singularity](https://docs.sylabs.io/) (or Docker)
-- Optionally have a **reference FASTA** for your target locus (e.g., ompA reference for Chlamydia) — if not provided, Tracy uses de-novo assembly
+**Option A: Use Conda/Mamba with Bioconda (recommended for SLURM servers)**
 
-> Note: Tracy is auto-downloaded from GitHub on first run. No separate Tracy installation needed.
+```bash
+# Install Mamba (faster conda) if not already installed
+conda install -y mamba -c conda-forge
+
+# Create and activate environment with Tracy and BLAST
+mamba create -y -n genosanger -c conda-forge -c bioconda tracy blast
+source activate genosanger
+
+# Verify installation
+tracy --version  # Should show v0.9.1+ or newer
+```
+
+**Option B: Use containers (if Conda not available)**
+
+- Install [Singularity](https://docs.sylabs.io/) (or Docker)
+- Build container: `singularity pull docker://genosanger/ubuntu20.04-tracy`
+
+> **Note:** Tracy v0.9.1+ is installed via Bioconda (preferred) or pre-bundled in the container. No separate GitHub downloads needed.
 
 ### Step 1b: Verify system requirements (recommended)
 
@@ -56,9 +71,9 @@ Before running the pipeline, verify all requirements are met:
 ```
 
 This script checks for:
-- ✓ Container runtime (Docker or Singularity)
-- ✓ Download tools (wget or curl)
+- ✓ Conda/Mamba with `tracy` package installed from Bioconda **OR** container runtime
 - ✓ Nextflow version
+- ✓ BLAST database availability (if specified)
 
 If any requirement is missing, the script exits with a clear error message.
 
@@ -85,6 +100,7 @@ See: https://github.com/asadprodhan/blastn
 **Prerequisites:**
 - SCF/AB1 chromatogram files (forward and reverse pairs)
 - A BLAST database (download from NCBI)
+- Conda environment with `tracy` and `blast` installed from Bioconda **OR** Singularity container built
 
 **Example using test data in this repository:**
 
@@ -98,13 +114,13 @@ EOF
 
 2. Run the pipeline:
 ```bash
-# For local testing with Docker
-nextflow run main.nf -c docker_local.config \
+# With Conda (recommended for SLURM, Bioconda packages)
+nextflow run main.nf \
     --samples_tsv samples.tsv \
     --publish_dir ./test_output \
     --db /path/to/blastn_database
 
-# For SLURM clusters with Singularity
+# Or with Singularity container
 nextflow run main.nf -c singularity_nextflow.config \
     --samples_tsv samples.tsv \
     --publish_dir ./test_output \
@@ -129,7 +145,6 @@ When the run completes, three directories are created:
 
 ## Limitations
 
-- The Tracy binary must be downloadable from GitHub at runtime (requires network access).
 - Reference-guided assembly requires `--ref` pointing to a valid reference FASTA.
 - De-novo assembly (without `--ref`) is supported but may produce lower-quality consensus when traces don't sufficiently overlap.
 
