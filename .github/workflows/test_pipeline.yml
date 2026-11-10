@@ -19,10 +19,12 @@ jobs:
           wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
           bash miniconda.sh -b -p /opt/miniconda3
           echo "/opt/miniconda3/bin" >> $GITHUB_PATH
+          echo "CONDA_HOME=/opt/miniconda3" >> $GITHUB_ENV
           rm miniconda.sh
 
       - name: Install dependencies via Conda
         run: |
+          source /opt/miniconda3/etc/profile.d/conda.sh
           conda create -y -n genosanger -c conda-forge -c bioconda tracy blast
           conda activate genosanger
           which tracy
@@ -37,12 +39,16 @@ jobs:
 
       - name: Build BLAST database for testing
         run: |
+          source /opt/miniconda3/etc/profile.d/conda.sh
           conda activate genosanger
           makeblastdb -in data/ompA_test.fasta -dbtype nucl -out data/ompA_test
           echo "BLAST database built successfully"
 
       - name: Test full pipeline with real SCF data and BLAST
         run: |
+          # Initialize conda
+          source /opt/miniconda3/etc/profile.d/conda.sh
+          
           # Create minimal test samples file with real SCF files from repo
           cat > test_samples.tsv << 'EOF'
           sampleId	read1	read2
