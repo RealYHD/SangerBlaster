@@ -16,7 +16,7 @@ params.db_path = params.db ? file(params.db).parent : ''
 process tracyAssemble {
     tag "${sampleId}"
     
-    conda 'conda-forge::tracy'
+    conda 'bioconda::tracy'
 
     publishDir (
         path: "${params.publish_dir}/temp",

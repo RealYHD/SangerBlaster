@@ -38,7 +38,7 @@ check_conda() {
             echo "✗ ERROR: Tracy package not installed in Conda environment!"
             echo ""
             echo "Install with:"
-            echo "  mamba create -y -n genosanger -c conda-forge tracy blast"
+            echo "  mamba create -y -n genosanger -c conda-forge -c bioconda tracy blast"
             echo "  source activate genosanger"
             exit 1
         fi
