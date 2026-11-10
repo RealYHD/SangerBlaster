@@ -32,7 +32,8 @@ jobs:
 
       - name: Download Nextflow
         run: |
-          wget -q https://get.nextflow.io/nf/ -O nextflow
+          wget -q https://github.com/nextflow-io/nextflow/releases/download/v26.10.5/nextflow-26.10.5-all.zip -O nextflow.zip
+          unzip -q nextflow.zip
           chmod +x nextflow
           sudo mv nextflow /usr/local/bin/
           nextflow -version
