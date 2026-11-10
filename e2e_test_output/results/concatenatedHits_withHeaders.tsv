@@ -1,4 +1,0 @@
-qaccver	saccver	pident	length	evalue	bitscore	mismatch	gapopen	qstart	qend	sstart	send	stitle
-Consensus	LHMD002_reference	87.379	618	0.0	710	78	0	1	618	58	675	LHMD002_reference CT_ompA typing reference matching LHMD002 consensus
-Consensus	LHMD002_reference	87.556	675	0.0	780	83	1	18	691	1	675	LHMD002_reference CT_ompA typing reference matching LHMD002 consensus
-Consensus	LHMD002_reference	100.000	676	0.0	1249	0	0	1	676	1	676	LHMD002_reference CT_ompA typing reference matching LHMD002 consensus
