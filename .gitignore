@@ -5,6 +5,7 @@ __pycache__/
 
 # Nextflow
 .nextflow/
+.nextflow.log
 .nextflow.log.*
 work/
 
@@ -12,6 +13,7 @@ work/
 test_*.tsv
 test_*.config
 test_db/
+test_output/
 SangerSequencingChromatograms/test_denovo.*
 SangerSequencingChromatograms/tracy
 

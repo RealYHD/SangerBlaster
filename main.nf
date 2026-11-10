@@ -2,7 +2,7 @@
 
 nextflow.enable.dsl=2
 
-params.samples_tsv = './samples.tsv'
+params.samples_tsv = params.samples_tsv ?: './samples.tsv'
 params.db = ""
 params.evalue = '0.1'
 params.topHits = '5'
@@ -12,8 +12,7 @@ params.ref = ''
 params.db_name = params.db ? file(params.db).name : ''
 params.db_path = params.db ? file(params.db).parent : ''
 
-// Tracy-based consensus: takes forward/reverse SCF chromatograms + reference,
-// produces a consensus FASTA. Replaces the old bioawk/Clustal/EMBOSS pipeline.
+// Tracy-based consensus assembly process with built-in TSV header check
 process tracyAssemble {
     tag "${sampleId}"
 
@@ -33,12 +32,13 @@ process tracyAssemble {
         """
         # Install wget if not available with timeout
         if ! command -v wget &> /dev/null; then
+            echo "Installing wget..."
             timeout 30 apt-get update -qq && timeout 60 apt-get install -y -qq wget || exit 1
         fi
 
         # Ensure Tracy binary is available (static binary, downloaded once to workdir)
         if [ ! -f tracy ]; then
-            # Use timeout with wget or curl, fail after 30 seconds total
+            echo "Downloading Tracy..."
             if command -v wget &> /dev/null; then
                 timeout 30 wget -q -O tracy https://github.com/gear-genomics/tracy/releases/download/v0.9.1/tracy-v0.9.1-linux-amd64 || exit 1
                 chmod +x tracy
@@ -58,19 +58,19 @@ process tracyAssemble {
         fi
 
         # Reference-guided or de-novo assembly of forward + reverse chromatograms
-        # Tracy writes consensus to {outprefix}.cons.fa, not stdout
         if [ -n "${params.ref}" ]; then
-            timeout 3600 ./tracy assemble -o "${sampleId}" -r ${params.ref} $forward $reverse 2>/dev/null || exit 1
+            echo "Using reference mode with ${params.ref}"
+            timeout 3600 ./tracy assemble -o ${sampleId} -r ${params.ref} $forward $reverse || exit 1
         else
-            timeout 3600 ./tracy assemble -o "${sampleId}" $forward $reverse 2>/dev/null || exit 1
+            echo "Using de novo mode"
+            timeout 3600 ./tracy assemble -o ${sampleId} $forward $reverse || exit 1
         fi
 
-        # Rename Tracy's output to match Nextflow's *.fasta output pattern
-        mv "${sampleId}.cons.fa" "${sampleId}.consensus.fasta" || exit 1
+        mv ${sampleId}.cons.fa ${sampleId}.consensus.fasta || exit 1
         """
 }
 
-// BLAST processes (unchanged from original sangerFlow)
+// BLAST process
 process blastn {
     tag "${query.baseName}"
     
@@ -87,7 +87,6 @@ process blastn {
 
     script:
         """
-        # Ensure we have a BLAST database with proper metadata
         if [ ! -d "${db}/" ]; then
             echo "ERROR: BLAST database directory ${db} does not exist!"
             exit 1
@@ -115,6 +114,7 @@ process blastn {
         """
 }
 
+// Top hits process
 process blastnTopHits {
     tag "${query.baseName}"
     
@@ -137,6 +137,7 @@ process blastnTopHits {
         """
 }
 
+// Concatenate hits process
 process blastHits_concat {
     
     publishDir "${params.publish_dir}/results", mode: 'copy'
@@ -173,14 +174,15 @@ workflow {
     """
     .stripIndent()
 
-    // Validate samples.tsv format first (fails fast)
-    validateSamples(params.samples_tsv)
-    
     // Read samples.tsv: sampleId, read1 (forward SCF), read2 (reverse SCF)
-    def samplesChannel = channel.fromPath( params.samples_tsv )
+    // First, check the header manually before parsing
+    def header = new File("${params.samples_tsv}").readLines().getAt(0)
+    if (header != "sampleId\tread1\tread2") {
+        throw new IllegalArgumentException("ERROR: samples.tsv header must be exactly: sampleId\\tread1\\tread2\nCurrent header: '$header'")
+    }
+
+    def samplesChannel = Channel.fromPath(params.samples_tsv)
         | splitCsv( header: true, sep: '\t' )
-        // Validate that each row has 3 columns and sampleId is not null
-        | filter { it.size() == 3 && it[0] != null }
         | map { row -> tuple( row.sampleId, file(row.read1), file(row.read2) ) }
 
     tracyAssemble( samplesChannel )
@@ -189,77 +191,4 @@ workflow {
     // blastn( tracyAssemble.out.consensus, params.db_path )
     // blastnTopHits(blastn.out.blastHits)
     // blastHits_concat(blastnTopHits.out.topHits.collect())
-}
-
-// Validation process to check samples.tsv format - FAILS FAST!
-process validateSamples {
-    tag "validation"
-    
-    script:
-        """
-        # Read the first line of the TSV file and verify headers
-        header=$(head -n 1 $params.samples_tsv)
-        
-        # Check if the header matches exactly (tab-separated, no extra spaces)
-        if [[ "$header" != "sampleId\tread1\tread2" ]]; then
-            echo "ERROR: samples.tsv header must be exactly: sampleId\\tread1\\tread2"
-            echo "Current header: '$header'"
-            exit 1
-        fi
-        
-        # Check if the file has data rows
-        line_count=$(wc -l < $params.samples_tsv)
-        if [ "$line_count" -lt 2 ]; then
-            echo "ERROR: samples.tsv must have at least one data row after the header"
-            exit 1
-        fi
-        
-        # Check that all files referenced in samples.tsv exist
-        tail -n +2 $params.samples_tsv | while IFS=$'\t' read -r sampleId read1 read2; do
-            if [ ! -f "$read1" ]; then
-                echo "ERROR: Forward file not found for sample $sampleId: $read1"
-                exit 1
-            fi
-            if [ ! -f "$read2" ]; then
-                echo "ERROR: Reverse file not found for sample $sampleId: $read2"
-                exit 1
-            fi
-        done
-        
-        echo "samples.tsv format and all files validated successfully!"
-        """
-}
-
-// Pre-flight check for container runtime availability - FAILS FAST!
-process preFlightCheck {
-    when: false  // Run this but don't emit anything, just fail if conditions not met
-    
-    script:
-        """
-        # Check Docker or Singularity availability with timeout
-        echo "Checking container runtime..."
-        
-        if command -v docker &> /dev/null; then
-            echo "✓ Docker is available"
-            docker --version | head -1
-        elif command -v singularity &> /dev/null; then
-            echo "✓ Singularity is available"
-            singularity version 2>&1 | head -1
-        else
-            echo "✗ ERROR: Neither Docker nor Singularity is installed!"
-            echo "Please install a container runtime before running this pipeline."
-            exit 1
-        fi
-        
-        # Also check for wget/curl for Tracy download
-        if command -v wget &> /dev/null || command -v curl &> /dev/null; then
-            echo "✓ wget or curl is available"
-        else
-            echo "✗ ERROR: Neither wget nor curl is available!"
-            echo "Please install one of these tools to download Tracy."
-            exit 1
-        fi
-        
-        echo "Pre-flight check passed! Pipeline can proceed."
-        """
 }
