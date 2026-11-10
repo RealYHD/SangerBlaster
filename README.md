@@ -57,6 +57,8 @@ source activate genosanger
 tracy --version  # Should show v0.9.1+ or newer
 ```
 
+> **Important for SLURM servers:** You must have `conda` or `mamba` available in your environment PATH when running the pipeline. Nextflow will automatically create and use a Conda environment containing Tracy via the `conda 'bioconda::tracy'` directive in `main.nf`. If you encounter "tracy: command not found" errors, ensure conda is installed and accessible before running the pipeline.
+
 ### Step 1b: Verify system requirements (recommended)
 
 Before running the pipeline, verify all requirements are met:
