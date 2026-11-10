@@ -1,0 +1,58 @@
+name: Test Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker
+        run: |
+          # Install Docker (already available in GitHub Actions)
+          echo "Docker is available"
+          docker --version
+
+      - name: Download Nextflow
+        run: |
+          wget -q https://get.nextflow.io/nf/ -O nextflow
+          chmod +x nextflow
+          mv nextflow /usr/local/bin/
+          nextflow -version
+
+      - name: Test Tracy assembly on sample data
+        run: |
+          # Create a minimal test samples file with real SCF files from repo
+          cat > test_samples.tsv << 'EOF'
+          sampleId	read1	read2
+          LHMD002	./SangerSequencingChromatograms/LHMD002-07_F1_1.ab1	./SangerSequencingChromatograms/LHMD002-07_R1_1.ab1
+          EOF
+
+          # Run pipeline with minimal config
+          nextflow run main.nf -c docker_local.config \
+            --samples_tsv test_samples.tsv \
+            --publish_dir ./test_output \
+            --db ""  # No BLAST needed for this test
+
+          echo "Pipeline completed successfully"
+
+      - name: Verify output exists
+        run: |
+          if [ -f test_output/temp/LHMD002.consensus.fasta ]; then
+            echo "Output file generated successfully"
+            head -3 test_output/temp/LHMD002.consensus.fasta
+          else
+            echo "ERROR: Expected output file not found"
+            exit 1
+          fi
+
+      - name: Cleanup
+        run: |
+          rm -rf .nextflow/ work/ test_output/
