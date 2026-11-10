@@ -45,6 +45,7 @@ process tracyAssemble {
 // BLAST process
 process blastn {
     tag "${query.baseName}"
+    conda 'bioconda::blast'
     
     publishDir "${params.publish_dir}/results", mode: 'copy'
 
