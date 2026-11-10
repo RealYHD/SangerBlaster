@@ -60,7 +60,6 @@ process blastn {
     script:
         """
         if [ ! -d "${db}/" ]; then
-            echo "ERROR: BLAST database directory ${db} does not exist!"
             exit 1
         fi
 
@@ -101,7 +100,6 @@ process blastnTopHits {
     script:
         """
         if [ ! -s ${query} ]; then
-            echo "ERROR: BLAST results file is empty or missing!"
             exit 1
         fi
 
@@ -124,7 +122,6 @@ process blastHits_concat {
 
         """
         if [ ${combinedFiles.size()} -eq 0 ]; then
-            echo "ERROR: No files to concatenate!"
             exit 1
         fi
 
