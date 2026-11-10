@@ -30,12 +30,11 @@ jobs:
           which tracy
           which blastn
 
-      - name: Download Nextflow
+      - name: Install Nextflow via Conda
         run: |
-          wget -q https://github.com/nextflow-io/nextflow/releases/download/v26.10.5/nextflow-26.10.5-all.zip -O nextflow.zip
-          unzip -q nextflow.zip
-          chmod +x nextflow
-          sudo mv nextflow /usr/local/bin/
+          source /opt/miniconda3/etc/profile.d/conda.sh
+          conda activate genosanger
+          conda install -y -c conda-forge nextflow
           nextflow -version
 
       - name: Build BLAST database for testing
