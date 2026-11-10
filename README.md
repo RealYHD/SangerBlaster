@@ -76,81 +76,48 @@ SAMPLE001	SAMPLE001_R1.scf	SAMPLE001_R2.scf
 SAMPLE002	SAMPLE002_R1.scf	SAMPLE002_R2.scf
 ```
 
-### Step 3: Download a BLAST database from NCBI
+### Step 2: Download a BLAST database from NCBI
 
 See: https://github.com/asadprodhan/blastn
 
-### Step 3: Run GenoSanger
+### Step 3: Run GenoSanger (Quick Start Example)
 
-**Current status:** The pipeline is tested and working with Tracy assembly. BLAST steps are commented out until a test database is available.
+**Prerequisites:**
+- SCF/AB1 chromatogram files (forward and reverse pairs)
+- A BLAST database (download from NCBI)
 
-You'll need a configuration file that matches your environment:
+**Example using test data in this repository:**
 
-**For Docker (local development / cloud):**
+1. Create a `samples.tsv` file:
 ```bash
-nextflow run . -c docker_local.config \
-    --samples_tsv samples.tsv \
-    [--ref /path/to/reference.fa] \
-    --db /path/to/blastn_database \
-    --publish_dir ./
+cat > samples.tsv << 'EOF'
+sampleId	read1	read2
+LHMD002	./SangerSequencingChromatograms/LHMD002-07_F1_1.ab1	./SangerSequencingChromatograms/LHMD002-07_R1_1.ab1
+EOF
 ```
 
-**For Singularity (SLURM clusters):**
+2. Run the pipeline:
 ```bash
-nextflow run . -c singularity_nextflow.config \
+# For local testing with Docker
+nextflow run main.nf -c docker_local.config \
     --samples_tsv samples.tsv \
-    [--ref /path/to/reference.fa] \
-    --db /path/to/blastn_database \
-    --publish_dir ./
-```
+    --publish_dir ./test_output \
+    --db /path/to/blastn_database
 
-**For SLURM with Docker (production):**
-```bash
-nextflow run . -c prod_nextflow.config \
+# For SLURM clusters with Singularity
+nextflow run main.nf -c singularity_nextflow.config \
     --samples_tsv samples.tsv \
-    [--ref /path/to/reference.fa] \
-    --db /path/to/blastn_database \
-    --publish_dir ./
-```
-
-You can set blastn thresholds with:
-- `--evalue` — default 0.1
-- `--cpus` — default 18
-- `--topHits` — default 5
-
-Example (reference-guided):
-```bash
-nextflow run . \
-    --samples_tsv samples.tsv \
-    --ref reference.fa \
-    --evalue 0.05 --topHits 1 --cpus 16 \
+    --publish_dir ./test_output \
     --db /path/to/blastn_database
 ```
 
-Example (de-novo, no reference):
+3. Check results:
 ```bash
-nextflow run . \
-    --samples_tsv samples.tsv \
-    --db /path/to/blastn_database \
-    --publish_dir ./
+ls test_output/temp/  # Consensus FASTA files
+# LHMD002.consensus.fasta
 ```
 
-> **Note:** The pipeline currently runs with hardcoded test samples. Full `samples.tsv` parsing is implemented but requires manual invocation. For testing, modify `main.nf` to use the sample channel directly.
-
-### Step 3b: Verify system requirements (recommended)
-
-Before running the pipeline, verify all requirements are met:
-
-```bash
-./check_requirements.sh
-```
-
-This script checks for:
-- ✓ Container runtime (Docker or Singularity)
-- ✓ Download tools (wget or curl)
-- ✓ Nextflow version
-
-If any requirement is missing, the script exits with a clear error message.
+> **Note:** The pipeline currently runs with hardcoded test samples in `main.nf` for initial testing. Full `samples.tsv` parsing is implemented but requires modification to `main.nf` to enable sample channel. See `main.nf` workflow section for details.
 
 ## Outputs
 
