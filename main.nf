@@ -155,7 +155,7 @@ workflow {
         | map { row -> tuple( row.sampleId, file(row.read1), file(row.read2) ) }
 
     // Run Tracy assembly
-    def tracyResults = tracyAssemble( samplesChannel )
+    tracyAssemble( samplesChannel )
 
     // Run BLAST pipeline (requires --db parameter)
     blastn( tracyAssemble.out.consensus, params.db_path )
