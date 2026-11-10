@@ -69,23 +69,13 @@ process blastn {
             exit 1
         fi
 
-        blastn \
-            -query ${query} -db "${params.db}" \
-            -outfmt 11 -out ${query.baseName}_blast.asn \
-            -evalue ${params.evalue} \
-            -num_threads ${params.cpus} || exit 1
+        blastn -query ${query} -db "${params.db}" -outfmt 11 -out ${query.baseName}_blast.asn -evalue ${params.evalue} -num_threads ${params.cpus} || exit 1
 
-        blast_formatter \
-            -archive ${query.baseName}_blast.asn \
-            -outfmt 5 -out ${query.baseName}_blast.xml || exit 1
+        blast_formatter -archive ${query.baseName}_blast.asn -outfmt 5 -out ${query.baseName}_blast.xml || exit 1
 
-        blast_formatter \
-            -archive ${query.baseName}_blast.asn \\\\
-            -html -out ${query.baseName}_blast.html || exit 1
+        blast_formatter -archive ${query.baseName}_blast.asn -html -out ${query.baseName}_blast.html || exit 1
 
-        blast_formatter \
-            -archive ${query.baseName}_blast.asn \
-            -outfmt "6 qaccver saccver pident length evalue bitscore mismatch gapopen qstart qend sstart send stitle" -out ${query.baseName}_blast_unsort.tsv || exit 1
+        blast_formatter -archive ${query.baseName}_blast.asn -outfmt "6 qaccver saccver pident length evalue bitscore mismatch gapopen qstart qend sstart send stitle" -out ${query.baseName}_blast_unsort.tsv || exit 1
 
         # Sort by bitscore
         sort -n -r -k 6 ${query.baseName}_blast_unsort.tsv > ${query.baseName}_blast_sort.tsv || exit 1
