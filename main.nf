@@ -38,8 +38,8 @@ process tracyAssemble {
             tracy assemble -o ${sampleId} $forward $reverse > "${sampleId}.tracy.log" 2>&1 || true
         fi
 
-        # Check for specific error message using regex
-        if grep -qE "At least 2 traces are required" "${sampleId}.tracy.log"; then
+        # Check for specific error message using case-insensitive regex
+        if grep -qiE "at least 2 traces are required" "${sampleId}.tracy.log"; then
             echo "ERROR: Traces don't match for ${sampleId} - Tracy failed" >> "${sampleId}.FAILED"
             exit 0  # Skip this sample gracefully, continue pipeline
         fi
