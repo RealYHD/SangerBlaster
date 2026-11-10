@@ -32,47 +32,13 @@ process tracyAssemble {
 
     script:
         """
-        echo "Tracy assembly for ${sampleId}..."
-        # Verify input files exist before running Tracy
-        if [ ! -f "$forward" ]; then
-            echo "ERROR: Forward trace file not found: $forward"
-            exit 1
-        fi
-        if [ ! -f "$reverse" ]; then
-            echo "ERROR: Reverse trace file not found: $reverse"
-            exit 1
-        fi
-        
-        # Check if conda environment is available (for Tracy)
-        if ! command -v tracy &> /dev/null; then
-            echo "ERROR: Tracy not installed. Ensure conda bioconda::tracy directive works or manually install:"
-            echo "  mamba create -n genosanger -c conda-forge -c bioconda tracy blast"
-            echo "  source activate genosanger (or use nextflow -c slurm_conda.config with conda enabled)"
-            exit 1
-        fi
-        
-        # Run Tracy assembly - let it write directly to stdout/stderr
         if [ -n "${params.ref}" ]; then
-            echo "Using reference mode with ${params.ref}"
             tracy assemble -o ${sampleId} -r ${params.ref} $forward $reverse || exit 1
         else
-            echo "Using de novo mode"
             tracy assemble -o ${sampleId} $forward $reverse || exit 1
         fi
-        
-        # Check for mismatched traces error
-        if [ ! -f "${sampleId}.cons.fa" ]; then
-            echo "ERROR: Tracy failed to produce consensus file for ${sampleId}"
-            exit 1
-        fi
-        
-        # Move Tracy's output to expected consensus filename
-        mv ${sampleId}.cons.fa ${sampleId}.consensus.fasta || {
-            echo "ERROR: Failed to move consensus file for ${sampleId}"
-            exit 1
-        }
-        
-        echo "SUCCESS: Created consensus for ${sampleId}"
+
+        mv ${sampleId}.cons.fa ${sampleId}.consensus.fasta || exit 1
         """
 }
 
