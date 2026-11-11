@@ -1,4 +1,4 @@
-// Nextflow config for GenoSanger - Updated for 26.x
+// Nextflow config for GenoSanger - Updated for 26.x (Conda only)
 
 params.start = new java.util.Date().format("yyyyMMdd")
 params.threads = Runtime.getRuntime().availableProcessors()
@@ -24,10 +24,9 @@ executor {
     memory = '16.GB'
 }
 
-// Process settings with resource definitions
+// Process settings with resource definitions (Conda)
 process {
     withName: 'tracyAssemble' {
-        container = 'quay.io/nf-core/ubuntu:20.04'
         cpus = 4
         memory = '4.GB'
         time = '60.min'
@@ -35,7 +34,6 @@ process {
     }
 
     withName: 'blastn' {
-        container = 'quay.io/biocontainers/blast:2.14.1--pl5321h6f7f691_0'
         cpus = 18
         memory = '8.GB'
         time = '240.min'
@@ -43,7 +41,6 @@ process {
     }
 
     withName: 'blastnTopHits' {
-        container = 'quay.io/nf-core/ubuntu:20.04'
         cpus = 1
         memory = '512.MB'
         time = '2.min'
@@ -51,7 +48,6 @@ process {
     }
 
     withName: 'blastHits_concat' {
-        container = 'quay.io/nf-core/ubuntu:20.04'
         cpus = 1
         memory = '512.MB'
         time = '2.min'
@@ -59,11 +55,11 @@ process {
     }
 }
 
-// Container engine settings
-singularity {
-    enabled = false  // Disable for now - use Docker instead
+// Container engine disabled - using Conda instead
+docker {
+    enabled = false
 }
 
-docker {
-    enabled = true
+singularity {
+    enabled = false
 }

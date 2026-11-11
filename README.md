@@ -88,15 +88,14 @@ SAMPLE001	SAMPLE001_R1.scf	SAMPLE001_R2.scf
 SAMPLE002	SAMPLE002_R1.scf	SAMPLE002_R2.scf
 ```
 
-### Step 2: Download a BLAST database from NCBI
+### Step 3: Download a BLAST database from NCBI
 
 See: https://github.com/asadprodhan/blastn
 
-**Quick test option:** Use the provided sample BLAST database for initial testing (created in this repo's `test_db/` directory):
+**Quick test option:** Use the provided sample BLAST database for initial testing (the FASTA source is in this repo's `data/` directory):
 ```bash
-# Build sample BLAST database (already done in test_db/)
-# If you need to rebuild:
-makeblastdb -in test_db/ompA_test.fasta -dbtype nucl -out test_db/ompA_test
+# Build sample BLAST database (already done in data/):
+makeblastdb -in data/ompA_test.fasta -dbtype nucl -out data/ompA_test
 ```
 
 ### Step 3: Run GenoSanger (Quick Start Example)
@@ -118,7 +117,7 @@ EOF
 
 2. Run the pipeline (Conda method tested E2E on local Linux):
 ```bash
-nextflow run main.nf -c slurm_conda.config \
+nextflow run main.nf -c slurm_conda.config.example \
     --samples_tsv samples.tsv \
     --publish_dir ./test_output \
     --db /path/to/blastn_database/base_name
@@ -139,7 +138,19 @@ ls test_output/temp/  # Consensus FASTA files
 
 ## Resource Definitions
 
-The pipeline includes resource definitions (CPU, memory, time) for optimized SLURM execution. Use `slurm_conda.config` for the appropriate configuration.
+The pipeline includes resource definitions (CPU, memory, time) for optimized SLURM execution. Use `slurm_conda.config.example` for the appropriate configuration.
+
+## Automated Testing
+
+This repository includes a GitHub Actions workflow (`.github/workflows/test_pipeline.yml`) that runs an end-to-end test on every push to `main`:
+
+1. Sets up Miniconda with Bioconda channels
+2. Creates a Conda environment with `tracy` and `blast`
+3. Builds a test BLAST database from `data/ompA_test.fasta`
+4. Runs the full pipeline with sample SCF data (LHMD002)
+5. Verifies all output files are generated correctly
+
+This ensures the pipeline works correctly in CI before deployment.
 
 ## Outputs
 
@@ -148,6 +159,16 @@ When the run completes, three directories are created:
 - **results/** — BLAST hit TSV files per sample + master `concatenatedHits_withHeaders.tsv`
 - **temp/** — intermediate consensus FASTA files
 - **work/** — Nextflow work directory (can be deleted to free space)
+
+## Legacy Documentation
+
+The following PNG images in this repository are screenshots from the original `sangerFlow` pipeline documentation (kept for reference only). The GenoSanger interface and workflow differ significantly:
+
+- `sangerFlow.PNG`, `sangerFlow_infograph.png` - Original sangerFlow workflow diagram
+- `Sample_description_file.PNG` - Original FASTA-based sample file format (GenoSanger uses SCF traces)
+- `Nextflow_options.PNG`, `Singularity_options.PNG`, `Version_number_location.PNG`, `Master_result_sheet.PNG` - Original pipeline configuration outputs
+
+For current documentation, see the "How to use GenoSanger" section above.
 
 ## Limitations
 

@@ -13,10 +13,24 @@ temp
 nextflow.config
 results
 
+# Logs
+*.log
+
 # Test artifacts
 test_*.tsv
 test_*.config
 test_db/
+
+# BLAST database index files
+*.ndb
+*.nhd
+*.nhr
+*.nin
+*.njs
+*.nog
+*.nsd
+*.nsi
+*.nsq
 test_output/
 SangerSequencingChromatograms/test_denovo.*
 SangerSequencingChromatograms/tracy
