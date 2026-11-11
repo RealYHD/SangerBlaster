@@ -98,7 +98,7 @@ See: https://github.com/asadprodhan/blastn
 makeblastdb -in data/ompA_test.fasta -dbtype nucl -out data/ompA_test
 ```
 
-### Step 3: Run GenoSanger (Quick Start Example)
+### Step 4: Run GenoSanger (Quick Start Example)
 
 **Prerequisites:**
 - SCF/AB1 chromatogram files (forward and reverse pairs)
@@ -151,6 +151,21 @@ This repository includes a GitHub Actions workflow (`.github/workflows/test_pipe
 5. Verifies all output files are generated correctly
 
 This ensures the pipeline works correctly in CI before deployment.
+
+## Container Fallback (Optional)
+
+If Conda is not available on your system, a Singularity container can be used instead. The script `build_genosanger_container.sh` builds a Singularity image with Tracy pre-installed:
+
+```bash
+./build_genosanger_container.sh
+```
+
+However, the Conda method is strongly recommended because:
+- It's faster to set up and update
+- No container runtime (Singularity/Docker) required on SLURM clusters
+- Bioconda provides automatic dependency management
+
+See `docker_local.config.example` for a Docker-based configuration if needed.
 
 ## Outputs
 
