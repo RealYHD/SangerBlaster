@@ -182,12 +182,12 @@ These conditions stop the run immediately — they are validated in the workflow
 ## Differences from sangerFlow
 
 | Feature | sangerFlow (original) | SangerBlaster (this pipeline) |
-||---|---|---|
-|| **Input** | FASTA files (already basecalled) | **SCF chromatogram traces** (forward + reverse) |
-|| **Consensus** | bioawk → sed → Clustal → EMBOSS cons | **Tracy `assemble`** — reference-guided assembly of SCF traces |
-|| **Reference** | Not required | **Optional** (`--ref` for reference-guided; de-novo by default) |
-|| **QC** | Simple sed-based ambiguity trimming | Tracy-based quality-controlled consensus |
-|| **BLAST** | Yes (unchanged) | Yes (unchanged) |
+|---|---|---|
+| **Input** | FASTA files (already basecalled) | **SCF chromatogram traces** (forward + reverse) |
+| **Consensus** | bioawk → sed → Clustal → EMBOSS cons | **Tracy `assemble`** — reference-guided assembly of SCF traces |
+| **Reference** | Not required | **Optional** (`--ref` for reference-guided; de-novo by default) |
+| **QC** | Simple sed-based ambiguity trimming | Tracy-based quality-controlled consensus |
+| **BLAST** | Yes (unchanged) | Yes (unchanged) |
 
 SangerBlaster retains the original sangerFlow's BLAST-based species identification workflow, but replaces the consensus-forming steps (bioawk/Clustal/EMBOSS) with Tracy's assembly, which:
 - Reads SCF/AB1/ABI chromatogram files natively
