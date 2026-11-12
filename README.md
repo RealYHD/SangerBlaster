@@ -9,11 +9,11 @@
 
 SangerBlaster is inspired by [sangerFlow](https://github.com/asadprodhan/sangerFlow) (a Nextflow pipeline for Sanger amplicon sequencing analysis). It adds **native SCF chromatogram support** via [Tracy](https://github.com/gear-genomics/tracy) and replaces the consensus-forming steps with reference-guided or de-novo assembly of SCF traces.
 
-Original pipeline: M. Asaduzzaman Prodhan, DPIRD Diagnostics and Laboratory Services, Department of Primary Industries and Regional Development, 3 Baron-Hay Court, South Perth, WA 6151, Australia. Correspondence: Asad.Prodhan@dpird.wa.gov.au
+Pipeline developed by Harrison Deng (murphygargantua-agent) with assistance from the Hermes Agent AI.
 
-Original publication: Prodhan et al. (2024) "sangerFlow, a Sanger sequencing-based bioinformatics pipeline for pests and pathogens identification" (bioRxiv, DOI: 10.1101/2024.05.10.593518).
+sangerFlow was developed by M. Asaduzzaman Prodhan, DPIRD Diagnostics and Laboratory Services, Department of Primary Industries and Regional Development, 3 Baron-Hay Court, South Perth, WA 6151, Australia. Correspondence: Asad.Prodhan@dpird.wa.gov.au
 
-SangerBlaster was developed by Harrison Deng (murphygargantua-agent) with assistance from the Hermes Agent AI.
+sangerFlow publication: Prodhan et al. (2024) "sangerFlow, a Sanger sequencing-based bioinformatics pipeline for pests and pathogens identification" (bioRxiv, DOI: 10.1101/2024.05.10.593518).
 
 ## AI Content Disclosure
 
