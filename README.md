@@ -1,29 +1,19 @@
 <p align="center">
   <a href="https://github.com/murphygargantua-agent/SangerBlaster#GPL-3.0-1-ov-file"><img src="https://img.shields.io/badge/License-GPL%203.0-yellow.svg" alt="License GPL 3.0" style="display: inline-block;"></a>
-  <a href="https://github.com/asadprodhan/sangerFlow"><img src="https://img.shields.io/badge/Original-sangerFlow-blue.svg" alt="Based on sangerFlow" style="display: inline-block;"></a>
+  <a href="https://github.com/asadprodhan/sangerFlow"><img src="https://img.shields.io/badge/Inspired%20by-sangerFlow-blue.svg" alt="Inspired by sangerFlow" style="display: inline-block;"></a>
 </p>
 
 <br />
 
 ## About SangerBlaster
 
-SangerBlaster is a fork of [sangerFlow](https://github.com/asadprodhan/sangerFlow) (a Nextflow pipeline for Sanger amplicon sequencing analysis) that adds **native SCF chromatogram support** via [Tracy](https://github.com/gear-genomics/tracy).
+SangerBlaster is inspired by [sangerFlow](https://github.com/asadprodhan/sangerFlow) (a Nextflow pipeline for Sanger amplicon sequencing analysis). It adds **native SCF chromatogram support** via [Tracy](https://github.com/gear-genomics/tracy) and replaces the consensus-forming steps with reference-guided or de-novo assembly of SCF traces.
 
 Original pipeline: M. Asaduzzaman Prodhan, DPIRD Diagnostics and Laboratory Services, Department of Primary Industries and Regional Development, 3 Baron-Hay Court, South Perth, WA 6151, Australia. Correspondence: Asad.Prodhan@dpird.wa.gov.au
 
 Original publication: Prodhan et al. (2024) "sangerFlow, a Sanger sequencing-based bioinformatics pipeline for pests and pathogens identification" (bioRxiv, DOI: 10.1101/2024.05.10.593518).
 
 SangerBlaster was developed by Harrison Deng (murphygargantua-agent) with assistance from the Hermes Agent AI.
-
-### Key differences from sangerFlow
-
-| Feature | sangerFlow (original) | SangerBlaster (this fork) |
-|---|---|---|
-| **Input** | FASTA files (already basecalled) | **SCF chromatogram traces** (forward + reverse) |
-| **Consensus** | bioawk → sed → Clustal → EMBOSS cons | **Tracy `assemble`** — reference-guided assembly of SCF traces |
-| **Reference** | Not required | **Optional** (`--ref` for reference-guided; de-novo by default) |
-| **QC** | Simple sed-based ambiguity trimming | Tracy-based quality-controlled consensus |
-| **BLAST** | Yes (unchanged) | Yes (unchanged) |
 
 SangerBlaster retains the original sangerFlow's BLAST-based species identification workflow, but replaces the consensus-forming steps (bioawk/Clustal/EMBOSS) with Tracy's assembly, which:
 - Reads SCF/AB1/ABI chromatogram files natively
@@ -188,6 +178,22 @@ Two conditions are pipeline-level hard failures:
 
 - Reference-guided assembly requires `--ref` pointing to a valid reference FASTA.
 - De-novo assembly (without `--ref`) is supported but may produce lower-quality consensus when traces don't sufficiently overlap.
+
+## Differences from sangerFlow
+
+| Feature | sangerFlow (original) | SangerBlaster (this pipeline) |
+||---|---|---|
+|| **Input** | FASTA files (already basecalled) | **SCF chromatogram traces** (forward + reverse) |
+|| **Consensus** | bioawk → sed → Clustal → EMBOSS cons | **Tracy `assemble`** — reference-guided assembly of SCF traces |
+|| **Reference** | Not required | **Optional** (`--ref` for reference-guided; de-novo by default) |
+|| **QC** | Simple sed-based ambiguity trimming | Tracy-based quality-controlled consensus |
+|| **BLAST** | Yes (unchanged) | Yes (unchanged) |
+
+SangerBlaster retains the original sangerFlow's BLAST-based species identification workflow, but replaces the consensus-forming steps (bioawk/Clustal/EMBOSS) with Tracy's assembly, which:
+- Reads SCF/AB1/ABI chromatogram files natively
+- Assembles forward and reverse traces — reference-guided if `--ref` is given, or de-novo otherwise
+- Produces a consensus FASTA with uncovered positions left as N/ambiguous (no forced filling)
+- Tracy is installed via Bioconda (recommended)
 
 ## License
 
