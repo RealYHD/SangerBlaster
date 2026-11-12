@@ -17,6 +17,10 @@
 # Nextflow work dir
 work/
 .nextflow*
+results
+temp
+nextflow.config
+
 # Test artifacts (generated during E2E runs)
 test_output/
 test_dup_output/
