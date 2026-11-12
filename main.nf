@@ -117,7 +117,7 @@ process blastHits_concat {
     script:
 
         """
-        if [ ${combinedFiles.size()} -eq 0 ]; then
+        if [ -z "${combinedFiles}" ]; then
             exit 1
         fi
 
@@ -146,8 +146,15 @@ workflow {
         throw new IllegalArgumentException("ERROR: samples.tsv header must be exactly: sampleId\\tread1\\tread2\nCurrent header: '${lines[0]}'\n")
     }
 
+    if (lines.size() < 2) {
+        throw new IllegalArgumentException("ERROR: samples.tsv has no data rows after the header\n")
+    }
+
     def rows = lines[1..-1].findAll { it.trim() }.collect { line ->
         def parts = line.split('\t')
+        if (parts.size() < 3) {
+            throw new IllegalArgumentException("ERROR: samples.tsv row has fewer than 3 columns: '$line'\nExpected: sampleId\\tread1\\tread2\n")
+        }
         [parts[0], parts[1], parts[2]]
     }
 

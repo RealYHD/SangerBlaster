@@ -147,8 +147,13 @@ This repository includes a GitHub Actions workflow (`.github/workflows/test_pipe
 1. Sets up Miniconda with Bioconda channels
 2. Creates a Conda environment with `tracy` and `blast`
 3. Builds a test BLAST database from `data/ompA_test.fasta`
-4. Runs the full pipeline with sample SCF data (LHMD002)
+4. Runs the full pipeline with sample SCF data (LHMD002, LHMD004, LHMD014)
 5. Verifies all output files are generated correctly
+6. Tests duplicate sample IDs in `samples.tsv`:
+   - Duplicates without `--dedupe_samples` → fail fast
+   - Duplicates with identical reads + `--dedupe_samples` → collapse to one run
+   - Duplicates with different reads + `--dedupe_samples` → fail fast
+7. Tests a single-sample run (the original CI baseline)
 
 This ensures the pipeline works correctly in CI before deployment.
 
@@ -182,6 +187,7 @@ The same per-sample pattern applies to BLAST: `blastn` also uses `errorStrategy 
 Two conditions are pipeline-level hard failures:
 - **Missing BLAST database** (`--db` not found) — validated in the workflow before any process runs, so the run stops immediately with a clear error rather than failing mid-run.
 - **Duplicate sample IDs** in `samples.tsv` — validated in the workflow before any process runs; each `sampleId` must be unique, otherwise every downstream output file name collides with itself. Pass `--dedupe_samples` to allow duplicates when all forward and reverse reads are identical (only one copy is processed); it still fails if the reads differ across duplicates.
+- **No data at all** — if *no* sample produces BLAST hits (every assembly failed), `blastHits_concat` exits with status 1, because a run that produced nothing is an error, not a result. A single-sample or mixed run (some samples fail, some succeed) is fine: the hits from the successful samples are concatenated as usual.
 
 ## Legacy Documentation
 

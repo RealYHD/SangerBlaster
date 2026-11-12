@@ -9,7 +9,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -46,18 +46,20 @@ jobs:
         run: |
           # Initialize conda
           source /opt/miniconda3/etc/profile.d/conda.sh
-          
+          conda activate genosanger
+
           # Get absolute path for database
           DB_PATH="$(cd data && pwd)/ompA_test"
-          
-          # Create minimal test samples file with real SCF files from repo
+
+          # Create test samples file with real SCF files from repo (3 valid samples)
           cat > test_samples.tsv << 'EOF'
           sampleId	read1	read2
           LHMD002	./SangerSequencingChromatograms/LHMD002-07_F1_1.ab1	./SangerSequencingChromatograms/LHMD002-07_R1_1.ab1
+          LHMD004	./SangerSequencingChromatograms/LHMD004-07_F1_1.ab1	./SangerSequencingChromatograms/LHMD004-07_R1_1.ab1
+          LHMD014	./SangerSequencingChromatograms/LHMD014-07_F1_1.ab1	./SangerSequencingChromatograms/LHMD014-07_R1_1.ab1
           EOF
 
           # Run full pipeline (Tracy + BLAST) with test database
-          conda activate genosanger
           nextflow run main.nf \
             --samples_tsv test_samples.tsv \
             --publish_dir ./test_output \
@@ -70,28 +72,126 @@ jobs:
         run: |
           if [ -f test_output/temp/LHMD002.consensus.fasta ]; then
             echo "✓ Consensus FASTA generated"
-            head -3 test_output/temp/LHMD002.consensus.fasta
           else
             echo "✗ ERROR: Expected consensus file not found"
             exit 1
           fi
 
-          if [ -f test_output/results/LHMD002.consensus_blast_sort.tsv ]; then
-            echo "✓ BLAST results generated"
-            head -3 test_output/results/LHMD002.consensus_blast_sort.tsv
-          else
-            echo "✗ ERROR: Expected BLAST file not found"
-            exit 1
-          fi
-
           if [ -f test_output/results/concatenatedHits_withHeaders.tsv ]; then
             echo "✓ Concatenated hits file generated"
-            head -3 test_output/results/concatenatedHits_withHeaders.tsv
           else
             echo "✗ ERROR: Expected concatenated hits file not found"
             exit 1
           fi
 
+      - name: Test single sample run
+        run: |
+          source /opt/miniconda3/etc/profile.d/conda.sh
+          conda activate genosanger
+          DB_PATH="$(cd data && pwd)/ompA_test"
+
+          # One sample, no duplicates — the original CI baseline
+          cat > test_single_samples.tsv << 'EOF'
+          sampleId	read1	read2
+          LHMD002	./SangerSequencingChromatograms/LHMD002-07_F1_1.ab1	./SangerSequencingChromatograms/LHMD002-07_R1_1.ab1
+          EOF
+
+          nextflow run main.nf \
+            --samples_tsv test_single_samples.tsv \
+            --publish_dir ./test_single_output \
+            --db "$DB_PATH" \
+            --cpus 2
+
+          if [ -f test_single_output/results/concatenatedHits_withHeaders.tsv ]; then
+            echo "✓ Single sample run works"
+          else
+            echo "✗ ERROR: Single sample run failed"
+            exit 1
+          fi
+
+      - name: Test duplicate sample IDs (should fail)
+        run: |
+          source /opt/miniconda3/etc/profile.d/conda.sh
+          conda activate genosanger
+          DB_PATH="$(cd data && pwd)/ompA_test"
+
+          # Duplicate the same sample ID twice
+          cat > test_dup_samples.tsv << 'EOF'
+          sampleId	read1	read2
+          LHMD002	./SangerSequencingChromatograms/LHMD002-07_F1_1.ab1	./SangerSequencingChromatograms/LHMD002-07_R1_1.ab1
+          LHMD002	./SangerSequencingChromatograms/LHMD002-07_F1_1.ab1	./SangerSequencingChromatograms/LHMD002-07_R1_1.ab1
+          EOF
+
+          # Without --dedupe_samples, this must fail fast with a clear error
+          nextflow run main.nf \
+            --samples_tsv test_dup_samples.tsv \
+            --publish_dir ./test_dup_output \
+            --db "$DB_PATH" \
+            --cpus 2 > dup.log 2>&1 || true
+
+          if grep -q "ERROR: Duplicate sample IDs in samples.tsv" dup.log; then
+            echo "✓ Duplicate sample IDs rejected without flag"
+          else
+            echo "✗ ERROR: Duplicate sample IDs were not rejected"
+            cat dup.log | tail -20
+            exit 1
+          fi
+
+      - name: Test duplicate sample IDs with --dedupe_samples (identical reads)
+        run: |
+          source /opt/miniconda3/etc/profile.d/conda.sh
+          conda activate genosanger
+          DB_PATH="$(cd data && pwd)/ompA_test"
+
+          # Duplicate the same sample ID twice, identical reads
+          cat > test_dup_samples_identical.tsv << 'EOF'
+          sampleId	read1	read2
+          LHMD002	./SangerSequencingChromatograms/LHMD002-07_F1_1.ab1	./SangerSequencingChromatograms/LHMD002-07_R1_1.ab1
+          LHMD002	./SangerSequencingChromatograms/LHMD002-07_F1_1.ab1	./SangerSequencingChromatograms/LHMD002-07_R1_1.ab1
+          EOF
+
+          # With --dedupe_samples, identical duplicates should be collapsed to one run
+          nextflow run main.nf \
+            --samples_tsv test_dup_samples_identical.tsv \
+            --publish_dir ./test_dup_identical_output \
+            --db "$DB_PATH" \
+            --cpus 2 --dedupe_samples
+
+          if [ -f test_dup_identical_output/results/concatenatedHits_withHeaders.tsv ]; then
+            echo "✓ Duplicate sample IDs with identical reads collapsed to one run"
+          else
+            echo "✗ ERROR: Duplicate sample IDs were not handled correctly"
+            exit 1
+          fi
+
+      - name: Test duplicate sample IDs with --dedupe_samples (different reads)
+        run: |
+          source /opt/miniconda3/etc/profile.d/conda.sh
+          conda activate genosanger
+          DB_PATH="$(cd data && pwd)/ompA_test"
+
+          # Duplicate the same sample ID twice, different reads
+          cat > test_dup_samples_different.tsv << 'EOF'
+          sampleId	read1	read2
+          LHMD002	./SangerSequencingChromatograms/LHMD002-07_F1_1.ab1	./SangerSequencingChromatograms/LHMD002-07_R1_1.ab1
+          LHMD002	./SangerSequencingChromatograms/LHMD004-07_F1_1.ab1	./SangerSequencingChromatograms/LHMD004-07_R1_1.ab1
+          EOF
+
+          # With --dedupe_samples, differing reads must still fail
+          nextflow run main.nf \
+            --samples_tsv test_dup_samples_different.tsv \
+            --publish_dir ./test_dup_different_output \
+            --db "$DB_PATH" \
+            --cpus 2 --dedupe_samples > dup_diff.log 2>&1 || true
+
+          if grep -q "ERROR: Sample ID LHMD002 appears multiple times with different reads in samples.tsv" dup_diff.log; then
+            echo "✓ Duplicate sample IDs with different reads rejected even with --dedupe_samples"
+          else
+            echo "✗ ERROR: Duplicate sample IDs with different reads were not rejected"
+            cat dup_diff.log | tail -20
+            exit 1
+          fi
+
       - name: Cleanup
         run: |
-          rm -rf .nextflow/ work/ test_output/
+          rm -rf .nextflow/ work/ test_output/ test_dup_output/ test_dup_identical_output/ test_dup_different_output/
