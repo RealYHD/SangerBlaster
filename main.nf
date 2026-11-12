@@ -6,6 +6,7 @@ params.samples_tsv = params.samples_tsv ?: './samples.tsv'
 params.evalue = '0.1'
 params.topHits = '5'
 params.cpus = '18'
+// publish_dir is optional: if not provided, outputs are published next to the run
 params.publish_dir = './'
 params.ref = ''
 params.dedupe_samples = false
@@ -20,7 +21,7 @@ process tracyAssemble {
     errorStrategy 'ignore'
 
     publishDir (
-        path: "${params.publish_dir}/temp",
+        path: params.publish_dir ? "${params.publish_dir}/temp" : "",
         mode: 'copy',
         overwrite: 'true',
     )
@@ -56,7 +57,7 @@ process blastn {
     conda 'bioconda::blast'
     errorStrategy 'ignore'
     
-    publishDir "${params.publish_dir}/results", mode: 'copy'
+    publishDir params.publish_dir ? "${params.publish_dir}/results" : "", mode: 'copy'
 
     input:
     tuple val(query_id), path(query)
@@ -88,7 +89,7 @@ process blastnTopHits {
     tag "${query.baseName}"
     errorStrategy 'ignore'
     
-    publishDir "${params.publish_dir}/temp", mode: 'copy'
+    publishDir params.publish_dir ? "${params.publish_dir}/temp" : "", mode: 'copy'
 
 
     input:
@@ -106,7 +107,7 @@ process blastnTopHits {
 // Concatenate hits process
 process blastHits_concat {
 
-    publishDir "${params.publish_dir}/results", mode: 'copy'
+    publishDir params.publish_dir ? "${params.publish_dir}/results" : "", mode: 'copy'
 
     input:
     file combinedFiles
