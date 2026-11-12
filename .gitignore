@@ -30,3 +30,7 @@ test_single_output/
 dup.log
 dup_diff.log
 *.tsv
+# Pipeline run outputs (local E2E tests)
+dup_id_out/
+test_*/
+*.tsv
