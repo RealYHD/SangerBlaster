@@ -15,12 +15,6 @@ Original publication: Prodhan et al. (2024) "sangerFlow, a Sanger sequencing-bas
 
 SangerBlaster was developed by Harrison Deng (murphygargantua-agent) with assistance from the Hermes Agent AI.
 
-SangerBlaster retains the original sangerFlow's BLAST-based species identification workflow, but replaces the consensus-forming steps (bioawk/Clustal/EMBOSS) with Tracy's assembly, which:
-- Reads SCF/AB1/ABI chromatogram files natively
-- Assembles forward and reverse traces — reference-guided if `--ref` is given, or de-novo otherwise
-- Produces a consensus FASTA with uncovered positions left as N/ambiguous (no forced filling)
-- Tracy is installed via Bioconda (recommended)
-
 ## AI Content Disclosure
 
 This repository contains code generated or significantly modified by artificial intelligence (Hermes Agent). The original pipeline (sangerFlow) was written by M. Asaduzzaman Prodhan. The SangerBlaster modifications — including the Tracy integration, `main.nf` rewrite, config file definitions, and documentation — were produced with AI assistance.
