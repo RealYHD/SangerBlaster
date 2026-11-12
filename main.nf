@@ -14,6 +14,9 @@ process tracyAssemble {
     tag "${sampleId}"
     
     conda 'bioconda::tracy'
+    // Tracy failing on one sample shouldn't take down the whole run: keep the
+    // pipeline alive and let the optional outputs decide what flows downstream.
+    errorStrategy 'ignore'
 
     publishDir (
         path: "${params.publish_dir}/temp",
@@ -36,25 +39,14 @@ process tracyAssemble {
             tracy assemble -o ${sampleId} $forward $reverse > "${sampleId}.tracy.log" 2>&1 || true
         fi
 
-        # Check for specific error message using case-insensitive regex
-        if grep -qiE "at least 2 traces are required" ${sampleId}.tracy.log; then
-            echo "ERROR: Traces don't match for ${sampleId} - Tracy failed" >> "${sampleId}.FAILED"
-            exit 0  # Skip this sample gracefully, continue pipeline
+        # Audit trail: flag samples whose assembly failed so they show up in temp/
+        if grep -qiE "at least 2 traces are required" ${sampleId}.tracy.log || [ ! -f ${sampleId}.cons.fa ]; then
+            echo "ERROR: Assembly failed for ${sampleId}" >> "${sampleId}.FAILED"
         fi
 
-        # Rename Tracy's consensus output into place, tolerating edge cases:
-        #  .cons.fa missing (Tracy failed silently), .consensus.fasta already existing
-        #  (stale output from an earlier run), or both names being the same file
-        #  (hardlinked) — which would make plain mv abort this process.
+        # Move the consensus into place (|| true tolerates a stale/same-inode target)
         if [ -f ${sampleId}.cons.fa ]; then
-            # ! -ef = different files (or .consensus.fasta doesn't exist): move into place
-            if [ ! -f ${sampleId}.consensus.fasta ] || ! [ ${sampleId}.cons.fa -ef ${sampleId}.consensus.fasta ]; then
-                mv ${sampleId}.cons.fa ${sampleId}.consensus.fasta || exit 1
-            fi
-            # Same inode as existing .consensus.fasta: both names point at the same file, nothing to do
-        else
-            echo "ERROR: Tracy did not produce a consensus FASTA for ${sampleId}" >> "${sampleId}.FAILED"
-            exit 0  # Skip this sample gracefully, continue pipeline
+            mv ${sampleId}.cons.fa ${sampleId}.consensus.fasta || true
         fi
         """
 }
