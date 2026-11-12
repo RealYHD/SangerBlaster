@@ -1,7 +1,3 @@
-# SangerBlaster — Sanger amplicon sequencing analysis with Tracy
-
-<h1 align="center">SangerBlaster — Sanger amplicon sequencing analysis with Tracy</h1>
-
 <p align="center">
   <a href="https://github.com/murphygargantua-agent/SangerBlaster#GPL-3.0-1-ov-file"><img src="https://img.shields.io/badge/License-GPL%203.0-yellow.svg" alt="License GPL 3.0" style="display: inline-block;"></a>
   <a href="https://github.com/asadprodhan/sangerFlow"><img src="https://img.shields.io/badge/Original-sangerFlow-blue.svg" alt="Based on sangerFlow" style="display: inline-block;"></a>
