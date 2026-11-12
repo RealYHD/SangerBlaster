@@ -161,7 +161,4 @@ workflow {
     blastn( tracyAssemble.out.consensus )
     blastnTopHits(blastn.out.blastHits)
     blastHits_concat(blastnTopHits.out.topHits.collect())
-
-    // Log failed samples
-    tracyAssemble.out.failed.view { id -> log.error "FAILED: $id" }
 }
