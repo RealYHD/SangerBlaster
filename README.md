@@ -175,7 +175,7 @@ When the run completes, three directories are created:
 - **temp/** — intermediate consensus FASTA files
 - **work/** — Nextflow work directory (can be deleted to free space)
 
-Samples whose Tracy assembly fails (e.g. mismatched or unreadable chromatograms) do not take down the run: the `tracyAssemble` process uses `errorStrategy 'ignore'`, so only that sample is flagged with a `<sampleId>.FAILED` file in `temp/` and the pipeline continues with the remaining samples.
+Samples whose Tracy assembly fails (e.g. mismatched or unreadable chromatograms) do not take down the run: the `tracyAssemble` process uses `errorStrategy 'ignore'`, so only that sample's process exits with Tracy's failure code (recorded in `work/<hash>/.exitcode`) and the pipeline continues with the remaining samples. Nextflow logs `NOTE: Process \`tracyAssemble (<sampleId>)\` terminated with an error exit status (<code>) -- Error is ignored`.
 
 The same per-sample pattern applies to BLAST: `blastn` also uses `errorStrategy 'ignore'` with optional outputs, so a BLAST failure on one sample (bad consensus, empty assembly) is caught and that sample simply produces no hits downstream instead of failing the whole run. `blastnTopHits` similarly uses `errorStrategy 'ignore'`: if a consensus generates zero hits, no topHits file is emitted and that sample is skipped by the master concatenation.
 

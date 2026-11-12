@@ -33,20 +33,22 @@ process tracyAssemble {
 
     script:
         """
+        # Run Tracy; capture its exit code without letting -e abort the script (|| keeps us alive)
         if [ -n "${params.ref}" ]; then
-            tracy assemble -o ${sampleId} -r ${params.ref} $forward $reverse > "${sampleId}.tracy.log" 2>&1 || true
+            tracy assemble -o ${sampleId} -r ${params.ref} $forward $reverse > "${sampleId}.tracy.log" 2>&1 || tracy_exit=\$?
         else
-            tracy assemble -o ${sampleId} $forward $reverse > "${sampleId}.tracy.log" 2>&1 || true
-        fi
-
-        # Audit trail: flag samples whose assembly failed so they show up in temp/
-        if grep -qiE "at least 2 traces are required" ${sampleId}.tracy.log || [ ! -f ${sampleId}.cons.fa ]; then
-            echo "ERROR: Assembly failed for ${sampleId}" >> "${sampleId}.FAILED"
+            tracy assemble -o ${sampleId} $forward $reverse > "${sampleId}.tracy.log" 2>&1 || tracy_exit=\$?
         fi
 
         # Move the consensus into place (|| true tolerates a stale/same-inode target)
         if [ -f ${sampleId}.cons.fa ]; then
             mv ${sampleId}.cons.fa ${sampleId}.consensus.fasta || true
+        fi
+
+        # Exit with Tracy's real exit code so Nextflow knows this sample failed
+        # (errorStrategy 'ignore' still lets the rest of the run continue)
+        if [ -n "\${tracy_exit:-}" ]; then
+            exit \${tracy_exit}
         fi
         """
 }
