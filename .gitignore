@@ -1,44 +1,28 @@
-# Python cache
-__pycache__/
-*.pyc
-*.pyo
-
-# Nextflow
-.nextflow/
-.nextflow.log
-.nextflow.log.*
-work/
-condaCache
-temp
-nextflow.config
-results
-
-# Logs
-*.log
-
-# Test artifacts
-test_*.tsv
-test_*.config
-test_db/
-
-# BLAST database index files
+# BLAST database index files built by makeblastdb (data/ompA_test.*)
 *.ndb
-*.nhd
 *.nhr
 *.nin
-*.njs
-*.nog
-*.nsd
-*.nsi
 *.nsq
+*.ntf
+*.nto
+*.njs
+*.not
+*.fsa
+*.fasta
+*.log
+*.json
+*.vertical
+*.align.fa
+*.cons.fa
+# Nextflow work dir
+work/
+.nextflow*
+# Test artifacts (generated during E2E runs)
 test_output/
-SangerSequencingChromatograms/test_denovo.*
-SangerSequencingChromatograms/tracy
-
-# IDE
-.idea/
-.vscode/
-
-# OS
-.DS_Store
-Thumbs.db
+test_dup_output/
+test_dup_identical_output/
+test_dup_different_output/
+test_single_output/
+dup.log
+dup_diff.log
+*.tsv
