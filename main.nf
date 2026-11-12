@@ -158,7 +158,7 @@ workflow {
         [parts[0], parts[1], parts[2]]
     }
 
-    def byId = rows.groupBy { id -> id }
+    def byId = rows.groupBy { row -> row[0] }
     if (byId.any { _id, group -> group.size() > 1 }) {
         if (!params.dedupe_samples) {
             throw new IllegalArgumentException("ERROR: Duplicate sample IDs in samples.tsv: ${byId.findAll { _id, group -> group.size() > 1 }.keySet()}\nEvery sample ID must be unique, or pass --dedupe_samples to allow duplicates that share the same reads.\n")
