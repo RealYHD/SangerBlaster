@@ -52,9 +52,12 @@ process tracyAssemble {
 }
 
 // BLAST process
+// Missing --db index is a config error checked upfront in the workflow; a per-sample
+// blastn failure is caught by errorStrategy 'ignore' so the sample is skipped downstream.
 process blastn {
     tag "${query.baseName}"
     conda 'bioconda::blast'
+    errorStrategy 'ignore'
     
     publishDir "${params.publish_dir}/results", mode: 'copy'
 
@@ -62,34 +65,31 @@ process blastn {
     tuple val(query_id), path(query)
 
     output:
-    path ("${query.baseName}_blast_sort.tsv"), emit: blastHits
-    path ("${query.baseName}_blast.xml")
-    path ("${query.baseName}_blast.html")
+    path ("${query.baseName}_blast_sort.tsv"), optional: true, emit: blastHits
+    path ("${query.baseName}_blast.xml"), optional: true
+    path ("${query.baseName}_blast.html"), optional: true
 
     script:
         """
-        # Check that BLAST database exists (check for index files)
-        if [ ! -f "${params.db}.ndb" ] && [ ! -f "${params.db}.nhd" ]; then
-            echo "BLAST database not found: missing ${params.db}.ndb or ${params.db}.nhd" >&2
-            exit 1
-        fi
+        blastn -query ${query} -db "${params.db}" -outfmt 11 -out ${query.baseName}_blast.asn -evalue ${params.evalue} -num_threads ${params.cpus} || true
 
-        blastn -query ${query} -db "${params.db}" -outfmt 11 -out ${query.baseName}_blast.asn -evalue ${params.evalue} -num_threads ${params.cpus} || exit 1
+        blast_formatter -archive ${query.baseName}_blast.asn -outfmt 5 -out ${query.baseName}_blast.xml || true
 
-        blast_formatter -archive ${query.baseName}_blast.asn -outfmt 5 -out ${query.baseName}_blast.xml || exit 1
+        blast_formatter -archive ${query.baseName}_blast.asn -html -out ${query.baseName}_blast.html || true
 
-        blast_formatter -archive ${query.baseName}_blast.asn -html -out ${query.baseName}_blast.html || exit 1
-
-        blast_formatter -archive ${query.baseName}_blast.asn -outfmt "6 qaccver saccver pident length evalue bitscore mismatch gapopen qstart qend sstart send stitle" -out ${query.baseName}_blast_unsort.tsv || exit 1
+        blast_formatter -archive ${query.baseName}_blast.asn -outfmt "6 qaccver saccver pident length evalue bitscore mismatch gapopen qstart qend sstart send stitle" -out ${query.baseName}_blast_unsort.tsv || true
 
         # Sort by bitscore
-        sort -n -r -k 6 ${query.baseName}_blast_unsort.tsv > ${query.baseName}_blast_sort.tsv || exit 1
+        sort -n -r -k 6 ${query.baseName}_blast_unsort.tsv > ${query.baseName}_blast_sort.tsv || true
         """
 }
 
 // Top hits process
+// An empty query is a per-sample condition (empty consensus → no hits); caught by
+// errorStrategy 'ignore' so downstream simply skips that sample.
 process blastnTopHits {
     tag "${query.baseName}"
+    errorStrategy 'ignore'
     
     publishDir "${params.publish_dir}/temp", mode: 'copy'
 
@@ -102,11 +102,7 @@ process blastnTopHits {
 
     script:
         """
-        if [ ! -s ${query} ]; then
-            exit 1
-        fi
-
-        head -n ${params.topHits} ${query} > ${query.baseName}_topHits.tsv || exit 1
+        head -n ${params.topHits} ${query} > ${query.baseName}_topHits.tsv || true
         """
 }
 
@@ -138,6 +134,13 @@ workflow {
     // Validate required parameters upfront (fail fast)
     if (!params.db) {
         throw new IllegalArgumentException("ERROR: --db parameter is required for BLAST workflow.\nUsage: nextflow run main.nf --db /path/to/database/base\n")
+    }
+
+    // Validate the BLAST database index exists (a missing index is a config error, not
+    // a per-sample condition, so it stops the run before any process starts)
+    def dbIndex = ["${params.db}.ndb", "${params.db}.nhd"]
+    if (!dbIndex.any { new File(it).exists() }) {
+        throw new IllegalArgumentException("ERROR: BLAST database not found: ${params.db}.ndb or ${params.db}.nhd\n")
     }
 
     // Read samples.tsv: sampleId, read1 (forward SCF), read2 (reverse SCF)

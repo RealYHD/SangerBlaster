@@ -177,6 +177,12 @@ When the run completes, three directories are created:
 
 Samples whose Tracy assembly fails (e.g. mismatched or unreadable chromatograms) do not take down the run: the `tracyAssemble` process uses `errorStrategy 'ignore'`, so only that sample is flagged with a `<sampleId>.FAILED` file in `temp/` and the pipeline continues with the remaining samples.
 
+The same per-sample pattern applies to BLAST: `blastn` also uses `errorStrategy 'ignore'` with optional outputs, so a BLAST failure on one sample (bad consensus, empty assembly) is caught and that sample simply produces no hits downstream instead of failing the whole run. `blastnTopHits` similarly uses `errorStrategy 'ignore'`: if a consensus generates zero hits, no topHits file is emitted and that sample is skipped by the master concatenation.
+
+Two conditions are pipeline-level hard failures:
+- **Missing BLAST database** (`--db` not found) — validated in the workflow before any process runs, so the run stops immediately with a clear error rather than failing mid-run.
+- **No data at all** in `blastHits_concat` — if *no* sample produces hits (e.g. every sample's assembly failed), the concatenation fails with exit status 1, because a run that produced nothing is an error, not a result.
+
 ## Legacy Documentation
 
 The following PNG images in this repository are screenshots from the original `sangerFlow` pipeline documentation (kept for reference only). The GenoSanger interface and workflow differ significantly:
