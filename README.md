@@ -159,13 +159,19 @@ When the run completes, three directories are created:
 - **temp/** — intermediate consensus FASTA files
 - **work/** — Nextflow work directory (can be deleted to free space)
 
-Samples whose Tracy assembly fails (e.g. mismatched or unreadable chromatograms) do not take down the run: the `tracyAssemble` process uses `errorStrategy 'ignore'`, so only that sample's process exits with Tracy's failure code (recorded in `work/<hash>/.exitcode`) and the pipeline continues with the remaining samples. Nextflow logs `NOTE: Process \`tracyAssemble (<sampleId>)\` terminated with an error exit status (<code>) -- Error is ignored`.
+### Graceful failure handling
 
-The same per-sample pattern applies to BLAST: `blastn` also uses `errorStrategy 'ignore'` with optional outputs, so a BLAST failure on one sample (bad consensus, empty assembly) is caught and that sample simply produces no hits downstream instead of failing the whole run. `blastnTopHits` similarly uses `errorStrategy 'ignore'`: if a consensus generates zero hits, no topHits file is emitted and that sample is skipped by the master concatenation.
+The pipeline keeps running even when individual samples fail:
 
-Two conditions are pipeline-level hard failures:
-- **Missing BLAST database** (`--db` not found) — validated in the workflow before any process runs, so the run stops immediately with a clear error rather than failing mid-run.
-- **Duplicate sample IDs** in `samples.tsv` — validated in the workflow before any process runs; each `sampleId` must be unique, otherwise every downstream output file name collides with itself. Pass `--dedupe_samples` to allow duplicates when all forward and reverse reads are identical (only one copy is processed); it still fails if the reads differ across duplicates.
+- **Tracy assembly** uses `errorStrategy 'ignore'`, so a failing sample only exits with Tracy's failure code (recorded in `work/<hash>/.exitcode`) and the rest of the run continues. Nextflow logs a `NOTE:` line for each ignored sample, which is normal.
+- **BLAST** also uses `errorStrategy 'ignore'` with optional outputs, so a failed consensus simply produces no hits downstream instead of failing the whole run. `blastnTopHits` behaves the same way: if a consensus generates zero hits, no topHits file is emitted and that sample is skipped by the master concatenation.
+
+### Pipeline-level hard failures
+
+These conditions stop the run immediately — they are validated in the workflow before any process runs:
+
+- **Missing BLAST database** (`--db` not found) — validation stops the run with a clear error rather than failing mid-run.
+- **Duplicate sample IDs** in `samples.tsv` — each `sampleId` must be unique, otherwise every downstream output file name collides with itself. Pass `--dedupe_samples` to allow duplicates when all forward and reverse reads are identical (only one copy is processed); it still fails if the reads differ across duplicates.
 - **No data at all** — if *no* sample produces BLAST hits (every assembly failed), `blastHits_concat` exits with status 1, because a run that produced nothing is an error, not a result. A single-sample or mixed run (some samples fail, some succeed) is fine: the hits from the successful samples are concatenated as usual.
 
 ## Limitations
