@@ -136,7 +136,7 @@ workflow {
     // Validate the BLAST database index exists (a missing index is a config error, not
     // a per-sample condition, so it stops the run before any process starts)
     def dbIndex = ["${params.db}.ndb", "${params.db}.nhd"]
-    if (!dbIndex.any { new File(it).exists() }) {
+    if (!dbIndex.any { file -> new File(file).exists() }) {
         throw new IllegalArgumentException("ERROR: BLAST database not found: ${params.db}.ndb or ${params.db}.nhd\n")
     }
 
@@ -150,7 +150,7 @@ workflow {
         throw new IllegalArgumentException("ERROR: samples.tsv has no data rows after the header\n")
     }
 
-    def rows = lines[1..-1].findAll { it.trim() }.collect { line ->
+    def rows = lines[1..-1].findAll { line -> line.trim() }.collect { line ->
         def parts = line.split('\t')
         if (parts.size() < 3) {
             throw new IllegalArgumentException("ERROR: samples.tsv row has fewer than 3 columns: '$line'\nExpected: sampleId\\tread1\\tread2\n")
@@ -158,15 +158,15 @@ workflow {
         [parts[0], parts[1], parts[2]]
     }
 
-    def byId = rows.groupBy { it[0] }
-    if (byId.any { id, group -> group.size() > 1 }) {
+    def byId = rows.groupBy { id -> id }
+    if (byId.any { _id, group -> group.size() > 1 }) {
         if (!params.dedupe_samples) {
-            throw new IllegalArgumentException("ERROR: Duplicate sample IDs in samples.tsv: ${byId.findAll { id, group -> group.size() > 1 }.keySet()}\nEvery sample ID must be unique, or pass --dedupe_samples to allow duplicates that share the same reads.\n")
+            throw new IllegalArgumentException("ERROR: Duplicate sample IDs in samples.tsv: ${byId.findAll { _id, group -> group.size() > 1 }.keySet()}\nEvery sample ID must be unique, or pass --dedupe_samples to allow duplicates that share the same reads.\n")
         }
 
         // With --dedupe_samples, duplicates are allowed only when all reads are identical
-        byId.findAll { id, group -> group.size() > 1 }.each { id, group ->
-            def readPairs = group.collect { [it[1], it[2]] }.toSet()
+        byId.findAll { _id, group -> group.size() > 1 }.each { id, group ->
+            def readPairs = group.collect { row -> [row[1], row[2]] }.toSet()
             if (readPairs.size() > 1) {
                 throw new IllegalArgumentException("ERROR: Sample ID $id appears multiple times with different reads in samples.tsv\nEach sample ID must use the same forward and reverse reads when duplicated.\n")
             }
@@ -174,7 +174,7 @@ workflow {
     }
 
     // Dedupe to one row per sample ID
-    def samplesChannel = Channel.fromList(byId.collect { id, group -> tuple(group[0][0], file(group[0][1]), file(group[0][2])) })
+    def samplesChannel = channel.fromList(byId.collect { _id, group -> tuple(group[0][0], file(group[0][1]), file(group[0][2])) })
 
     // Run Tracy assembly
     tracyAssemble( samplesChannel )
