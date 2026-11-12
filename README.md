@@ -159,22 +159,6 @@ These conditions stop the run immediately — they are validated in the workflow
 - **Duplicate sample IDs** in `samples.tsv` — each `sampleId` must be unique, otherwise every downstream output file name collides with itself. Pass `--dedupe_samples` to allow duplicates when all forward and reverse reads are identical (only one copy is processed); it still fails if the reads differ across duplicates.
 - **No data at all** — if *no* sample produces BLAST hits (every assembly failed), `blastHits_concat` exits with status 1, because a run that produced nothing is an error, not a result. A single-sample or mixed run (some samples fail, some succeed) is fine: the hits from the successful samples are concatenated as usual.
 
-## Differences from sangerFlow
-
-| Feature | sangerFlow (original) | SangerBlaster (this pipeline) |
-|---|---|---|
-| **Input** | FASTA files (already basecalled) | **SCF chromatogram traces** (forward + reverse) |
-| **Consensus** | bioawk → sed → Clustal → EMBOSS cons | **Tracy `assemble`** — reference-guided assembly of SCF traces |
-| **Reference** | Not required | **Optional** (`--ref` for reference-guided; de-novo by default) |
-| **QC** | Simple sed-based ambiguity trimming | Tracy-based quality-controlled consensus |
-| **BLAST** | Yes (unchanged) | Yes (unchanged) |
-
-SangerBlaster retains the original sangerFlow's BLAST-based species identification workflow, but replaces the consensus-forming steps (bioawk/Clustal/EMBOSS) with Tracy's assembly, which:
-- Reads SCF/AB1/ABI chromatogram files natively
-- Assembles forward and reverse traces — reference-guided if `--ref` is given, or de-novo otherwise
-- Produces a consensus FASTA with uncovered positions left as N/ambiguous (no forced filling)
-- Tracy is installed via Bioconda (recommended)
-
 ## License
 
 This project is licensed under GPL v3.0. The original sangerFlow was also licensed under GPL v3.0.
