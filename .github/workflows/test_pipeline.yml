@@ -84,6 +84,14 @@ jobs:
             exit 1
           fi
 
+          # Every hit in the concatenated file must carry its sample ID in the qaccver column
+          if [ "$(grep -v '^qaccver' test_output/results/concatenatedHits_withHeaders.tsv | cut -f1 | sort -u | wc -l)" = "3" ]; then
+            echo "✓ Concatenated hits carry sample IDs"
+          else
+            echo "✗ ERROR: Concatenated hits do not carry sample IDs"
+            exit 1
+          fi
+
       - name: Test single sample run
         run: |
           source /opt/miniconda3/etc/profile.d/conda.sh
@@ -194,4 +202,4 @@ jobs:
 
       - name: Cleanup
         run: |
-          rm -rf .nextflow/ work/ test_output/ test_dup_output/ test_dup_identical_output/ test_dup_different_output/
+          rm -rf .nextflow/ work/ test_output/ test_single_output/ test_dup_output/ test_dup_identical_output/ test_dup_different_output/ test_samples.tsv test_single_samples.tsv test_dup_samples.tsv test_dup_samples_identical.tsv test_dup_samples_different.tsv

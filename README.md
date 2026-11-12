@@ -124,11 +124,9 @@ nextflow run main.nf -c slurm_conda.config.example \
 ```
 
 > **⚠️ CRITICAL:** The `--db` parameter is **required** for the BLAST workflow. Without it, the pipeline will exit immediately with an error.  
-> The `--db` parameter should point to the **base name** of your BLAST database (the prefix of the index files). For example:
+> The `--db` parameter must point to an **absolute path** to the base name of your BLAST database (the prefix of the index files), because blastn runs inside its own per-sample work directory and cannot resolve relative paths. For example:
 > - If your files are `/path/to/db/ompA_test.ndb`, use `--db /path/to/db/ompA_test`
 > - If your files are `/path/to/db/blastdb.nhd`, use `--db /path/to/db/blastdb`
-> 
-> **Note:** Relative paths (e.g., `./db/blastdb`) are supported and will be automatically converted to absolute paths for reliability.
 
 3. Check results:
 ```bash
@@ -177,6 +175,7 @@ See `docker_local.config.example` for a Docker-based configuration if needed.
 When the run completes, three directories are created:
 
 - **results/** — BLAST hit TSV files per sample + master `concatenatedHits_withHeaders.tsv`
+  - The concatenated hits file has a `qaccver` column that carries the **sample ID** (the consensus FASTA header is renamed to the sample ID by `tracyAssemble`), so every hit can be traced back to the sample it came from.
 - **temp/** — intermediate consensus FASTA files
 - **work/** — Nextflow work directory (can be deleted to free space)
 

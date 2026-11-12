@@ -44,7 +44,9 @@ process tracyAssemble {
 
         # Move the consensus into place (|| true tolerates a stale/same-inode target)
         if [ -f ${sampleId}.cons.fa ]; then
-            mv ${sampleId}.cons.fa ${sampleId}.consensus.fasta || true
+            # Rename the Tracy consensus header to the sample ID so every BLAST hit
+            # can be traced back to the sample it came from
+            awk 'NR==1 {print ">""${sampleId}"} NR>1 {print}' ${sampleId}.cons.fa > ${sampleId}.consensus.fasta
         fi
         """
 }
