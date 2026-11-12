@@ -3,7 +3,7 @@
 
 set -e  # Exit on any error
 
-echo "=== GenoSanger Pipeline Requirement Check ==="
+echo "=== SangerBlaster Pipeline Requirement Check ==="
 echo ""
 
 # Check Conda/Mamba environment (recommended)
@@ -30,7 +30,7 @@ check_conda() {
                 echo "✓ Tracy version OK"
             else
                 echo "⚠ Warning: tracy package found but command not available"
-                echo "  Try: source activate genosanger"
+                echo "  Try: source activate sangerblaster"
             fi
             
             return 0
@@ -38,8 +38,8 @@ check_conda() {
             echo "✗ ERROR: Tracy package not installed in Conda environment!"
             echo ""
             echo "Install with:"
-            echo "  mamba create -y -n genosanger -c conda-forge -c bioconda tracy blast"
-            echo "  source activate genosanger"
+            echo "  mamba create -y -n sangerblaster -c conda-forge -c bioconda tracy blast"
+            echo "  source activate sangerblaster"
             exit 1
         fi
     else

@@ -1,13 +1,13 @@
 #!/bin/bash -e
-# Build GenoSanger container with Tracy pre-installed
-# Run: ./build_genosanger_container.sh
+# Build SangerBlaster container with Tracy pre-installed
+# Run: ./build_sangerblaster_container.sh
 
 BASE_IMAGE="quay.io/nf-core/ubuntu:20.04"
-CONTAINER_NAME="${1:-genosanger_ubuntu_20.04.img}"
+CONTAINER_NAME="${1:-sangerblaster_ubuntu_20.04.img}"
 TRACY_VERSION="0.9.1"
 TRACY_URL="https://github.com/gear-genomics/tracy/releases/download/v${TRACY_VERSION}/tracy-v${TRACY_VERSION}-linux-amd64"
 
-echo "=== Building GenoSanger container with Tracy ==="
+echo "=== Building SangerBlaster container with Tracy ==="
 echo "Base image: ${BASE_IMAGE}"
 echo "Output: ${CONTAINER_NAME}"
 
@@ -16,13 +16,13 @@ echo "Pulling base image..."
 singularity pull --name "${CONTAINER_NAME}" "${BASE_IMAGE}"
 
 # Check if we already have a build directory
-BUILD_DIR=$(mktemp -d -t genosanger-build-XXXXXXXXXX)
+BUILD_DIR=$(mktemp -d -t sangerblaster-build-XXXXXXXXXX)
 trap "rm -rf ${BUILD_DIR}" EXIT
 
 echo "Building container with Tracy pre-installed..."
 
 # Create definition file
-cat > "${BUILD_DIR}/genosanger.def" <<'EOF'
+cat > "${BUILD_DIR}/sangerblaster.def" <<'EOF'
 Bootstrap: docker
 From: quay.io/nf-core/ubuntu:20.04
 
@@ -46,7 +46,7 @@ From: quay.io/nf-core/ubuntu:20.04
 EOF
 
 # Build Singularity image from definition
-singularity build "${CONTAINER_NAME}" "${BUILD_DIR}/genosanger.def"
+singularity build "${CONTAINER_NAME}" "${BUILD_DIR}/sangerblaster.def"
 
 echo "=== Container built successfully ==="
 echo "Location: $(pwd)/${CONTAINER_NAME}"

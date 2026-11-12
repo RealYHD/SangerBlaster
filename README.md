@@ -1,27 +1,27 @@
-# GenoSanger — Sanger amplicon sequencing analysis with Tracy
+# SangerBlaster — Sanger amplicon sequencing analysis with Tracy
 
-<h1 align="center">GenoSanger — Sanger amplicon sequencing analysis with Tracy</h1>
+<h1 align="center">SangerBlaster — Sanger amplicon sequencing analysis with Tracy</h1>
 
 <p align="center">
-  <a href="https://github.com/murphygargantua-agent/GenoSanger#GPL-3.0-1-ov-file"><img src="https://img.shields.io/badge/License-GPL%203.0-yellow.svg" alt="License GPL 3.0" style="display: inline-block;"></a>
+  <a href="https://github.com/murphygargantua-agent/SangerBlaster#GPL-3.0-1-ov-file"><img src="https://img.shields.io/badge/License-GPL%203.0-yellow.svg" alt="License GPL 3.0" style="display: inline-block;"></a>
   <a href="https://github.com/asadprodhan/sangerFlow"><img src="https://img.shields.io/badge/Original-sangerFlow-blue.svg" alt="Based on sangerFlow" style="display: inline-block;"></a>
 </p>
 
 <br />
 
-## About GenoSanger
+## About SangerBlaster
 
-GenoSanger is a fork of [sangerFlow](https://github.com/asadprodhan/sangerFlow) (a Nextflow pipeline for Sanger amplicon sequencing analysis) that adds **native SCF chromatogram support** via [Tracy](https://github.com/gear-genomics/tracy).
+SangerBlaster is a fork of [sangerFlow](https://github.com/asadprodhan/sangerFlow) (a Nextflow pipeline for Sanger amplicon sequencing analysis) that adds **native SCF chromatogram support** via [Tracy](https://github.com/gear-genomics/tracy).
 
 Original pipeline: M. Asaduzzaman Prodhan, DPIRD Diagnostics and Laboratory Services, Department of Primary Industries and Regional Development, 3 Baron-Hay Court, South Perth, WA 6151, Australia. Correspondence: Asad.Prodhan@dpird.wa.gov.au
 
 Original publication: Prodhan et al. (2024) "sangerFlow, a Sanger sequencing-based bioinformatics pipeline for pests and pathogens identification" (bioRxiv, DOI: 10.1101/2024.05.10.593518).
 
-GenoSanger was developed by Harrison Deng (murphygargantua-agent) with assistance from the Hermes Agent AI.
+SangerBlaster was developed by Harrison Deng (murphygargantua-agent) with assistance from the Hermes Agent AI.
 
 ### Key differences from sangerFlow
 
-| Feature | sangerFlow (original) | GenoSanger (this fork) |
+| Feature | sangerFlow (original) | SangerBlaster (this fork) |
 |---|---|---|
 | **Input** | FASTA files (already basecalled) | **SCF chromatogram traces** (forward + reverse) |
 | **Consensus** | bioawk → sed → Clustal → EMBOSS cons | **Tracy `assemble`** — reference-guided assembly of SCF traces |
@@ -29,7 +29,7 @@ GenoSanger was developed by Harrison Deng (murphygargantua-agent) with assistanc
 | **QC** | Simple sed-based ambiguity trimming | Tracy-based quality-controlled consensus |
 | **BLAST** | Yes (unchanged) | Yes (unchanged) |
 
-GenoSanger retains the original sangerFlow's BLAST-based species identification workflow, but replaces the consensus-forming steps (bioawk/Clustal/EMBOSS) with Tracy's assembly, which:
+SangerBlaster retains the original sangerFlow's BLAST-based species identification workflow, but replaces the consensus-forming steps (bioawk/Clustal/EMBOSS) with Tracy's assembly, which:
 - Reads SCF/AB1/ABI chromatogram files natively
 - Assembles forward and reverse traces — reference-guided if `--ref` is given, or de-novo otherwise
 - Produces a consensus FASTA with uncovered positions left as N/ambiguous (no forced filling)
@@ -37,9 +37,9 @@ GenoSanger retains the original sangerFlow's BLAST-based species identification 
 
 ## AI Content Disclosure
 
-This repository contains code generated or significantly modified by artificial intelligence (Hermes Agent). The original pipeline (sangerFlow) was written by M. Asaduzzaman Prodhan. The GenoSanger modifications — including the Tracy integration, `main.nf` rewrite, config file definitions, and documentation — were produced with AI assistance.
+This repository contains code generated or significantly modified by artificial intelligence (Hermes Agent). The original pipeline (sangerFlow) was written by M. Asaduzzaman Prodhan. The SangerBlaster modifications — including the Tracy integration, `main.nf` rewrite, config file definitions, and documentation — were produced with AI assistance.
 
-## How to use GenoSanger
+## How to use SangerBlaster
 
 ### Step 1: Install required software
 
@@ -50,8 +50,8 @@ This repository contains code generated or significantly modified by artificial 
 conda install -y mamba -c conda-forge
 
 # Create and activate environment with Tracy and BLAST
-mamba create -y -n genosanger -c conda-forge -c bioconda tracy blast
-source activate genosanger
+mamba create -y -n sangerblaster -c conda-forge -c bioconda tracy blast
+source activate sangerblaster
 
 # Verify installation
 tracy --version  # Should show v0.9.1+ or newer
@@ -98,7 +98,7 @@ See: https://github.com/asadprodhan/blastn
 makeblastdb -in data/ompA_test.fasta -dbtype nucl -out data/ompA_test
 ```
 
-### Step 4: Run GenoSanger (Quick Start Example)
+### Step 4: Run SangerBlaster (Quick Start Example)
 
 **Prerequisites:**
 - SCF/AB1 chromatogram files (forward and reverse pairs)
@@ -157,10 +157,10 @@ This ensures the pipeline works correctly in CI before deployment.
 
 ## Container Fallback (Optional)
 
-If Conda is not available on your system, a Singularity container can be used instead. The script `build_genosanger_container.sh` builds a Singularity image with Tracy pre-installed:
+If Conda is not available on your system, a Singularity container can be used instead. The script `build_SangerBlaster_container.sh` builds a Singularity image with Tracy pre-installed:
 
 ```bash
-./build_genosanger_container.sh
+./build_SangerBlaster_container.sh
 ```
 
 However, the Conda method is strongly recommended because:
@@ -190,13 +190,13 @@ Two conditions are pipeline-level hard failures:
 
 ## Legacy Documentation
 
-The following PNG images in this repository are screenshots from the original `sangerFlow` pipeline documentation (kept for reference only). The GenoSanger interface and workflow differ significantly:
+The following PNG images in this repository are screenshots from the original `sangerFlow` pipeline documentation (kept for reference only). The SangerBlaster interface and workflow differ significantly:
 
 - `sangerFlow.PNG`, `sangerFlow_infograph.png` - Original sangerFlow workflow diagram
-- `Sample_description_file.PNG` - Original FASTA-based sample file format (GenoSanger uses SCF traces)
+- `Sample_description_file.PNG` - Original FASTA-based sample file format (SangerBlaster uses SCF traces)
 - `Nextflow_options.PNG`, `Singularity_options.PNG`, `Version_number_location.PNG`, `Master_result_sheet.PNG` - Original pipeline configuration outputs
 
-For current documentation, see the "How to use GenoSanger" section above.
+For current documentation, see the "How to use SangerBlaster" section above.
 
 ## Limitations
 

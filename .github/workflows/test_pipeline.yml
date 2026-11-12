@@ -25,8 +25,8 @@ jobs:
       - name: Install dependencies via Conda
         run: |
           source /opt/miniconda3/etc/profile.d/conda.sh
-          conda create -y -n genosanger -c conda-forge -c bioconda tracy blast
-          conda activate genosanger
+          conda create -y -n sangerblaster -c conda-forge -c bioconda tracy blast
+          conda activate sangerblaster
           which tracy
           which blastn
 
@@ -38,7 +38,7 @@ jobs:
       - name: Build BLAST database for testing
         run: |
           source /opt/miniconda3/etc/profile.d/conda.sh
-          conda activate genosanger
+          conda activate sangerblaster
           makeblastdb -in data/ompA_test.fasta -dbtype nucl -out data/ompA_test
           echo "BLAST database built successfully"
 
@@ -46,7 +46,7 @@ jobs:
         run: |
           # Initialize conda
           source /opt/miniconda3/etc/profile.d/conda.sh
-          conda activate genosanger
+          conda activate sangerblaster
 
           # Get absolute path for database
           DB_PATH="$(cd data && pwd)/ompA_test"
@@ -95,7 +95,7 @@ jobs:
       - name: Test single sample run
         run: |
           source /opt/miniconda3/etc/profile.d/conda.sh
-          conda activate genosanger
+          conda activate sangerblaster
           DB_PATH="$(cd data && pwd)/ompA_test"
 
           # One sample, no duplicates — the original CI baseline
@@ -120,7 +120,7 @@ jobs:
       - name: Test duplicate sample IDs (should fail)
         run: |
           source /opt/miniconda3/etc/profile.d/conda.sh
-          conda activate genosanger
+          conda activate sangerblaster
           DB_PATH="$(cd data && pwd)/ompA_test"
 
           # Duplicate the same sample ID twice
@@ -148,7 +148,7 @@ jobs:
       - name: Test duplicate sample IDs with --dedupe_samples (identical reads)
         run: |
           source /opt/miniconda3/etc/profile.d/conda.sh
-          conda activate genosanger
+          conda activate sangerblaster
           DB_PATH="$(cd data && pwd)/ompA_test"
 
           # Duplicate the same sample ID twice, identical reads
@@ -175,7 +175,7 @@ jobs:
       - name: Test duplicate sample IDs with --dedupe_samples (different reads)
         run: |
           source /opt/miniconda3/etc/profile.d/conda.sh
-          conda activate genosanger
+          conda activate sangerblaster
           DB_PATH="$(cd data && pwd)/ompA_test"
 
           # Duplicate the same sample ID twice, different reads

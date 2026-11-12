@@ -1,4 +1,4 @@
-// Nextflow config for GenoSanger - Updated for 26.x (Conda only)
+// Nextflow config for SangerBlaster - Updated for 26.x (Conda only)
 
 params.start = new java.util.Date().format("yyyyMMdd")
 params.threads = Runtime.getRuntime().availableProcessors()

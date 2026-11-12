@@ -1,4 +1,4 @@
-name: genosanger
+name: sangerblaster
 channels:
   - conda-forge
   - bioconda
