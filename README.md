@@ -157,10 +157,10 @@ This ensures the pipeline works correctly in CI before deployment.
 
 ## Container Fallback (Optional)
 
-If Conda is not available on your system, a Singularity container can be used instead. The script `build_SangerBlaster_container.sh` builds a Singularity image with Tracy pre-installed:
+If Conda is not available on your system, a Singularity container can be used instead. The script `build_sangerblaster_container.sh` builds a Singularity image with Tracy pre-installed:
 
 ```bash
-./build_SangerBlaster_container.sh
+./build_sangerblaster_container.sh
 ```
 
 However, the Conda method is strongly recommended because:
@@ -187,16 +187,6 @@ Two conditions are pipeline-level hard failures:
 - **Missing BLAST database** (`--db` not found) — validated in the workflow before any process runs, so the run stops immediately with a clear error rather than failing mid-run.
 - **Duplicate sample IDs** in `samples.tsv` — validated in the workflow before any process runs; each `sampleId` must be unique, otherwise every downstream output file name collides with itself. Pass `--dedupe_samples` to allow duplicates when all forward and reverse reads are identical (only one copy is processed); it still fails if the reads differ across duplicates.
 - **No data at all** — if *no* sample produces BLAST hits (every assembly failed), `blastHits_concat` exits with status 1, because a run that produced nothing is an error, not a result. A single-sample or mixed run (some samples fail, some succeed) is fine: the hits from the successful samples are concatenated as usual.
-
-## Legacy Documentation
-
-The following PNG images in this repository are screenshots from the original `sangerFlow` pipeline documentation (kept for reference only). The SangerBlaster interface and workflow differ significantly:
-
-- `sangerFlow.PNG`, `sangerFlow_infograph.png` - Original sangerFlow workflow diagram
-- `Sample_description_file.PNG` - Original FASTA-based sample file format (SangerBlaster uses SCF traces)
-- `Nextflow_options.PNG`, `Singularity_options.PNG`, `Version_number_location.PNG`, `Master_result_sheet.PNG` - Original pipeline configuration outputs
-
-For current documentation, see the "How to use SangerBlaster" section above.
 
 ## Limitations
 
