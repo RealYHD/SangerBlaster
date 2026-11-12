@@ -175,6 +175,8 @@ When the run completes, three directories are created:
 - **temp/** — intermediate consensus FASTA files
 - **work/** — Nextflow work directory (can be deleted to free space)
 
+Samples whose Tracy assembly fails (e.g. mismatched or unreadable chromatograms) do not take down the run: they are flagged with a `<sampleId>.FAILED` file in `temp/` and the pipeline continues with the remaining samples.
+
 ## Legacy Documentation
 
 The following PNG images in this repository are screenshots from the original `sangerFlow` pipeline documentation (kept for reference only). The GenoSanger interface and workflow differ significantly:

@@ -40,8 +40,21 @@ process tracyAssemble {
         if grep -qiE "at least 2 traces are required" ${sampleId}.tracy.log; then
             echo "ERROR: Traces don't match for ${sampleId} - Tracy failed" >> "${sampleId}.FAILED"
             exit 0  # Skip this sample gracefully, continue pipeline
+        fi
+
+        # Rename Tracy's consensus output into place, tolerating edge cases:
+        #  .cons.fa missing (Tracy failed silently), .consensus.fasta already existing
+        #  (stale output from an earlier run), or both names being the same file
+        #  (hardlinked) — which would make plain mv abort this process.
+        if [ -f ${sampleId}.cons.fa ]; then
+            # ! -ef = different files (or .consensus.fasta doesn't exist): move into place
+            if [ ! -f ${sampleId}.consensus.fasta ] || ! [ ${sampleId}.cons.fa -ef ${sampleId}.consensus.fasta ]; then
+                mv ${sampleId}.cons.fa ${sampleId}.consensus.fasta || exit 1
+            fi
+            # Same inode as existing .consensus.fasta: both names point at the same file, nothing to do
         else
-            mv ${sampleId}.cons.fa ${sampleId}.consensus.fasta || exit 1
+            echo "ERROR: Tracy did not produce a consensus FASTA for ${sampleId}" >> "${sampleId}.FAILED"
+            exit 0  # Skip this sample gracefully, continue pipeline
         fi
         """
 }
