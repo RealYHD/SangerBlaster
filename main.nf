@@ -33,22 +33,16 @@ process tracyAssemble {
 
     script:
         """
-        # Run Tracy; capture its exit code without letting -e abort the script (|| keeps us alive)
+        # Run Tracy; -e in the shebang aborts this script if it fails
         if [ -n "${params.ref}" ]; then
-            tracy assemble -o ${sampleId} -r ${params.ref} $forward $reverse > "${sampleId}.tracy.log" 2>&1 || tracy_exit=\$?
+            tracy assemble -o ${sampleId} -r ${params.ref} $forward $reverse > "${sampleId}.tracy.log" 2>&1
         else
-            tracy assemble -o ${sampleId} $forward $reverse > "${sampleId}.tracy.log" 2>&1 || tracy_exit=\$?
+            tracy assemble -o ${sampleId} $forward $reverse > "${sampleId}.tracy.log" 2>&1
         fi
 
         # Move the consensus into place (|| true tolerates a stale/same-inode target)
         if [ -f ${sampleId}.cons.fa ]; then
             mv ${sampleId}.cons.fa ${sampleId}.consensus.fasta || true
-        fi
-
-        # Exit with Tracy's real exit code so Nextflow knows this sample failed
-        # (errorStrategy 'ignore' still lets the rest of the run continue)
-        if [ -n "\${tracy_exit:-}" ]; then
-            exit \${tracy_exit}
         fi
         """
 }
