@@ -181,7 +181,7 @@ The same per-sample pattern applies to BLAST: `blastn` also uses `errorStrategy 
 
 Two conditions are pipeline-level hard failures:
 - **Missing BLAST database** (`--db` not found) — validated in the workflow before any process runs, so the run stops immediately with a clear error rather than failing mid-run.
-- **No data at all** in `blastHits_concat` — if *no* sample produces hits (e.g. every sample's assembly failed), the concatenation fails with exit status 1, because a run that produced nothing is an error, not a result.
+- **Duplicate sample IDs** in `samples.tsv` — validated in the workflow before any process runs; each `sampleId` must be unique, otherwise every downstream output file name collides with itself. Pass `--dedupe_samples` to allow duplicates when all forward and reverse reads are identical (only one copy is processed); it still fails if the reads differ across duplicates.
 
 ## Legacy Documentation
 

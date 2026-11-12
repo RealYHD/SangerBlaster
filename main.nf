@@ -8,6 +8,7 @@ params.topHits = '5'
 params.cpus = '18'
 params.publish_dir = './'
 params.ref = ''
+params.dedupe_samples = false
 
 // Tracy-based consensus assembly process with built-in TSV header check
 process tracyAssemble {
@@ -139,24 +140,34 @@ workflow {
         throw new IllegalArgumentException("ERROR: BLAST database not found: ${params.db}.ndb or ${params.db}.nhd\n")
     }
 
-    // Validate sample IDs are unique (a duplicate ID makes every downstream output collide)
+    // Read samples.tsv and validate it before building the channel
     def lines = new File("${params.samples_tsv}").readLines()
-    def ids = lines[1..-1].collect { it.split('\t')[0] }
-    if (ids.size() != ids.toSet().size()) {
-        def duplicates = ids.findAll { id -> ids.count(id) > 1 }.toSet()
-        throw new IllegalArgumentException("ERROR: Duplicate sample IDs in samples.tsv: ${duplicates}\nEvery sample ID must be unique, otherwise the output files collide.\n")
+    if (lines[0] != "sampleId\tread1\tread2") {
+        throw new IllegalArgumentException("ERROR: samples.tsv header must be exactly: sampleId\\tread1\\tread2\nCurrent header: '${lines[0]}'\n")
     }
 
-    // Read samples.tsv: sampleId, read1 (forward SCF), read2 (reverse SCF)
-    // First, check the header manually before parsing
-    def header = new File("${params.samples_tsv}").readLines().getAt(0)
-    if (header != "sampleId\tread1\tread2") {
-        throw new IllegalArgumentException("ERROR: samples.tsv header must be exactly: sampleId\\tread1\\tread2\nCurrent header: '$header'")
+    def rows = lines[1..-1].findAll { it.trim() }.collect { line ->
+        def parts = line.split('\t')
+        [parts[0], parts[1], parts[2]]
     }
 
-    def samplesChannel = channel.fromPath(params.samples_tsv)
-        | splitCsv( header: true, sep: '\t' )
-        | map { row -> tuple( row.sampleId, file(row.read1), file(row.read2) ) }
+    def byId = rows.groupBy { it[0] }
+    if (byId.any { id, group -> group.size() > 1 }) {
+        if (!params.dedupe_samples) {
+            throw new IllegalArgumentException("ERROR: Duplicate sample IDs in samples.tsv: ${byId.findAll { id, group -> group.size() > 1 }.keySet()}\nEvery sample ID must be unique, or pass --dedupe_samples to allow duplicates that share the same reads.\n")
+        }
+
+        // With --dedupe_samples, duplicates are allowed only when all reads are identical
+        byId.findAll { id, group -> group.size() > 1 }.each { id, group ->
+            def readPairs = group.collect { [it[1], it[2]] }.toSet()
+            if (readPairs.size() > 1) {
+                throw new IllegalArgumentException("ERROR: Sample ID $id appears multiple times with different reads in samples.tsv\nEach sample ID must use the same forward and reverse reads when duplicated.\n")
+            }
+        }
+    }
+
+    // Dedupe to one row per sample ID
+    def samplesChannel = Channel.fromList(byId.collect { id, group -> tuple(group[0][0], file(group[0][1]), file(group[0][2])) })
 
     // Run Tracy assembly
     tracyAssemble( samplesChannel )
