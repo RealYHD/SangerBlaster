@@ -159,11 +159,6 @@ These conditions stop the run immediately — they are validated in the workflow
 - **Duplicate sample IDs** in `samples.tsv` — each `sampleId` must be unique, otherwise every downstream output file name collides with itself. Pass `--dedupe_samples` to allow duplicates when all forward and reverse reads are identical (only one copy is processed); it still fails if the reads differ across duplicates.
 - **No data at all** — if *no* sample produces BLAST hits (every assembly failed), `blastHits_concat` exits with status 1, because a run that produced nothing is an error, not a result. A single-sample or mixed run (some samples fail, some succeed) is fine: the hits from the successful samples are concatenated as usual.
 
-## Limitations
-
-- Reference-guided assembly requires `--ref` pointing to a valid reference FASTA.
-- De-novo assembly (without `--ref`) is supported but may produce lower-quality consensus when traces don't sufficiently overlap.
-
 ## Differences from sangerFlow
 
 | Feature | sangerFlow (original) | SangerBlaster (this pipeline) |
