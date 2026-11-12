@@ -139,6 +139,14 @@ workflow {
         throw new IllegalArgumentException("ERROR: BLAST database not found: ${params.db}.ndb or ${params.db}.nhd\n")
     }
 
+    // Validate sample IDs are unique (a duplicate ID makes every downstream output collide)
+    def lines = new File("${params.samples_tsv}").readLines()
+    def ids = lines[1..-1].collect { it.split('\t')[0] }
+    if (ids.size() != ids.toSet().size()) {
+        def duplicates = ids.findAll { id -> ids.count(id) > 1 }.toSet()
+        throw new IllegalArgumentException("ERROR: Duplicate sample IDs in samples.tsv: ${duplicates}\nEvery sample ID must be unique, otherwise the output files collide.\n")
+    }
+
     // Read samples.tsv: sampleId, read1 (forward SCF), read2 (reverse SCF)
     // First, check the header manually before parsing
     def header = new File("${params.samples_tsv}").readLines().getAt(0)
