@@ -11,10 +11,6 @@ SangerBlaster is inspired by [sangerFlow](https://github.com/asadprodhan/sangerF
 
 Pipeline developed by Harrison Deng (murphygargantua-agent) with assistance from the Hermes Agent AI.
 
-sangerFlow was developed by M. Asaduzzaman Prodhan, DPIRD Diagnostics and Laboratory Services, Department of Primary Industries and Regional Development, 3 Baron-Hay Court, South Perth, WA 6151, Australia. Correspondence: Asad.Prodhan@dpird.wa.gov.au
-
-sangerFlow publication: Prodhan et al. (2024) "sangerFlow, a Sanger sequencing-based bioinformatics pipeline for pests and pathogens identification" (bioRxiv, DOI: 10.1101/2024.05.10.593518).
-
 ## AI Content Disclosure
 
 This repository contains code generated or significantly modified by artificial intelligence (Hermes Agent). The original pipeline (sangerFlow) was written by M. Asaduzzaman Prodhan. The SangerBlaster modifications — including the Tracy integration, `main.nf` rewrite, config file definitions, and documentation — were produced with AI assistance.
