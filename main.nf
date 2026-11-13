@@ -11,6 +11,16 @@ params.cpus = '18'
 // default location for publishDir
 params.publish_dir = './'
 params.ref = ''
+params.tracy_pratio = '0.33'  // peak ratio to call base
+params.tracy_trim = '4'      // trimming stringency [1:9], 0: disable
+params.tracy_fracmatch = '0.5'  // min. fraction of matches [0:1]
+params.tracy_gapopen = '-10'  // gap open
+params.tracy_gapext = '-4'   // gap extension
+params.tracy_match = '3'     // match score
+params.tracy_mismatch = '-5' // mismatch score
+params.tracy_called = '0.1'  // fraction of traces required for consensus
+params.tracy_inccons = false // include consensus in FASTA align
+params.tracy_incref = false  // include reference in consensus computation (req. --reference)
 params.dedupe_samples = false
 
 // Tracy-based consensus assembly process with built-in TSV header check
@@ -38,11 +48,7 @@ process tracyAssemble {
     script:
         """
         # Run Tracy; -e in the shebang aborts this script if it fails
-        if [ -n "${params.ref}" ]; then
-            tracy assemble -o ${sampleId} -r ${params.ref} $forward $reverse > "${sampleId}.tracy.log" 2>&1
-        else
-            tracy assemble -o ${sampleId} $forward $reverse > "${sampleId}.tracy.log" 2>&1
-        fi
+        tracy assemble -o ${sampleId} -p ${params.tracy_pratio} -t ${params.tracy_trim} -f ${params.tracy_fracmatch} -g ${params.tracy_gapopen} -e ${params.tracy_gapext} -m ${params.tracy_match} -n ${params.tracy_mismatch} -d ${params.tracy_called} ${params.ref ? '-r ' + params.ref : ''} ${params.tracy_inccons ? '-i' : ''} ${params.tracy_incref ? '-j' : ''} $forward $reverse > "${sampleId}.tracy.log" 2>&1
 
         # Move the consensus into place (|| true tolerates a stale/same-inode target)
         if [ -f ${sampleId}.cons.fa ]; then

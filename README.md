@@ -114,6 +114,33 @@ ls test_output/temp/  # Consensus FASTA files
 # LHMD002.consensus.fasta
 ```
 
+### Tracy assembly parameters
+
+The Tracy assembly step accepts these options, all prefixed with `tracy_`:
+
+| Parameter | Default | Description |
+|---|---|---|
+| `--tracy_pratio` | `0.33` | peak ratio to call base |
+| `--tracy_trim` | `4` | trimming stringency [1:9], 0 = disable |
+| `--tracy_fracmatch` | `0.5` | min. fraction of matches [0:1] |
+| `--tracy_gapopen` | `-10` | gap open |
+| `--tracy_gapext` | `-4` | gap extension |
+| `--tracy_match` | `3` | match score |
+| `--tracy_mismatch` | `-5` | mismatch score |
+| `--tracy_called` | `0.1` | fraction of traces required for consensus |
+| `--tracy_inccons` | `false` | include consensus in FASTA align |
+| `--tracy_incref` | `false` | include reference in consensus computation (req. `--ref`) |
+
+For example, to disable trimming and include the reference in consensus:
+
+```bash
+nextflow run main.nf -c slurm_conda.config.example \
+    --samples_tsv samples.tsv \
+    --publish_dir ./test_output \
+    --db /path/to/blastn_database/base_name \
+    --tracy_trim 0 --tracy_incref true
+```
+
 ### BLAST parameters
 
 Besides `--db`, the following BLAST options are configurable:
