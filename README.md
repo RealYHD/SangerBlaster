@@ -148,14 +148,25 @@ Besides `--db`, the following BLAST options are configurable:
 | `--sort_metric` | `bitscore` | Column to sort hits by: `evalue`, `bitscore`, `pident`, or `length` |
 | `--sort_order` | `descending` | Sort direction: `ascending` or `descending` |
 
-The BLAST output is sorted before the top hits are extracted. For example, to sort by percent identity (highest first):
+The BLAST search itself is also configurable:
+
+| Parameter | Default | Description |
+|---|---|---|
+| `--blast_task` | `megablast` | Search task: `blastn`, `blastn-short`, `megablast`, `dc-megablast`, `rmblastn` |
+| `--blast_dust` | `yes` | DUST low-complexity filter (`yes`/`no`) |
+| `--blast_strand` | `both` | Query strand(s): `both`, `plus`, `minus` |
+| `--blast_max_target_seqs` | `250` | Max target sequences to report |
+
+For example, to sort by percent identity (highest first) and search plus strand only:
 
 ```bash
 nextflow run main.nf -c slurm_conda.config.example \
     --samples_tsv samples.tsv \
     --publish_dir ./test_output \
     --db /path/to/blastn_database/base_name \
-    --sort_metric pident --sort_order ascending
+    --sort_metric pident --sort_order ascending \
+    --blast_task megablast --blast_strand plus
+```
 ```
 
 ## Resource Definitions

@@ -5,6 +5,11 @@ nextflow.enable.dsl=2
 params.samples_tsv = params.samples_tsv ?: './samples.tsv'
 params.evalue = '0.1'
 params.topHits = '5'
+// BLAST search options
+params.blast_task = 'megablast'  // blastn, blastn-short, megablast, dc-megablast, rmblastn
+params.blast_dust = 'yes'      // DUST low-complexity filter (yes/no)
+params.blast_strand = 'both'   // query strand(s): both, plus, minus
+params.blast_max_target_seqs = 250  // max target sequences to report
 params.sort_metric = 'bitscore'  // one of: evalue, bitscore, pident, length
 params.sort_order = 'descending' // ascending or descending
 params.cpus = '18'
@@ -79,7 +84,8 @@ process blastn {
 
     script:
         """
-        blastn -query ${query} -db "${params.db}" -outfmt 11 -out ${query.baseName}_blast.asn -evalue ${params.evalue} -num_threads ${params.cpus} || true
+        # BLAST search (ASN.1 archive is the intermediate format for blast_formatter)
+        blastn -query ${query} -db "${params.db}" -outfmt 11 -out ${query.baseName}_blast.asn -evalue ${params.evalue} -num_threads ${params.cpus} -task ${params.blast_task} -dust ${params.blast_dust} -strand ${params.blast_strand} -max_target_seqs ${params.blast_max_target_seqs} || true
 
         blast_formatter -archive ${query.baseName}_blast.asn -outfmt 5 -out ${query.baseName}_blast.xml || true
 
