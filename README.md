@@ -114,6 +114,27 @@ ls test_output/temp/  # Consensus FASTA files
 # LHMD002.consensus.fasta
 ```
 
+### BLAST parameters
+
+Besides `--db`, the following BLAST options are configurable:
+
+| Parameter | Default | Description |
+|---|---|---|
+| `--evalue` | `0.1` | E-value threshold for reporting hits |
+| `--topHits` | `5` | Number of top hits to keep per sample |
+| `--sort_metric` | `bitscore` | Column to sort hits by: `evalue`, `bitscore`, `pident`, or `length` |
+| `--sort_order` | `descending` | Sort direction: `ascending` or `descending` |
+
+The BLAST output is sorted before the top hits are extracted. For example, to sort by percent identity (highest first):
+
+```bash
+nextflow run main.nf -c slurm_conda.config.example \
+    --samples_tsv samples.tsv \
+    --publish_dir ./test_output \
+    --db /path/to/blastn_database/base_name \
+    --sort_metric pident --sort_order ascending
+```
+
 ## Resource Definitions
 
 The pipeline includes resource definitions (CPU, memory, time) for optimized SLURM execution. Use `slurm_conda.config.example` for the appropriate configuration.

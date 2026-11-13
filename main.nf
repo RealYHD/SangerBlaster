@@ -5,6 +5,8 @@ nextflow.enable.dsl=2
 params.samples_tsv = params.samples_tsv ?: './samples.tsv'
 params.evalue = '0.1'
 params.topHits = '5'
+params.sort_metric = 'bitscore'  // one of: evalue, bitscore, pident, length
+params.sort_order = 'descending' // ascending or descending
 params.cpus = '18'
 // default location for publishDir
 params.publish_dir = './'
@@ -79,8 +81,9 @@ process blastn {
 
         blast_formatter -archive ${query.baseName}_blast.asn -outfmt "6 qaccver saccver pident length evalue bitscore mismatch gapopen qstart qend sstart send stitle" -out ${query.baseName}_blast_unsort.tsv || true
 
-        # Sort by bitscore
-        sort -n -r -k 6 ${query.baseName}_blast_unsort.tsv > ${query.baseName}_blast_sort.tsv || true
+        # Sort by configured metric and order (default: bitscore, descending)
+        # Col 3=pident, 4=length, 5=evalue, 6=bitscore
+        sort -n ${params.sort_order == 'ascending' ? '' : '-r'} -k ${params.sort_metric == 'evalue' ? 5 : params.sort_metric == 'bitscore' ? 6 : params.sort_metric == 'pident' ? 3 : 4} ${query.baseName}_blast_unsort.tsv > ${query.baseName}_blast_sort.tsv || true
         """
 }
 
