@@ -1,7 +1,6 @@
 // Nextflow config for SangerBlaster - Conda version for SLURM cluster (no containers)
 
 params.start = new java.util.Date().format("yyyyMMdd")
-params.threads = Runtime.getRuntime().availableProcessors()
 
 // Conda settings
 conda {
@@ -20,7 +19,6 @@ params.ref = ''
 // Executor settings (local or slurm)
 executor {
     name = 'local'  // Use 'slurm' if submitting to SLURM queue
-    cpus = params.threads ?: 24
     memory = '100.GB'
 }
 
