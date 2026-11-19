@@ -1,7 +1,0 @@
-name: sangerblaster
-channels:
-  - conda-forge
-  - bioconda
-dependencies:
-  - tracy>=0.9.1
-  - blast

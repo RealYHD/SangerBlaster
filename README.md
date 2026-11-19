@@ -1,19 +1,18 @@
 <p align="center">
-  <a href="https://github.com/murphygargantua-agent/SangerBlaster#GPL-3.0-1-ov-file"><img src="https://img.shields.io/badge/License-GPL%203.0-yellow.svg" alt="License GPL 3.0" style="display: inline-block;"></a>
-  <a href="https://github.com/asadprodhan/sangerFlow"><img src="https://img.shields.io/badge/Inspired%20by-sangerFlow-blue.svg" alt="Inspired by sangerFlow" style="display: inline-block;"></a>
+  <a href="https://github.com/RealYHD/SangerBlaster#GPL-3.0-1-ov-file"><img src="https://img.shields.io/badge/License-GPL%203.0-yellow.svg" alt="License GPL 3.0" style="display: inline-block;"></a>
 </p>
 
 <br />
 
 ## About SangerBlaster
 
-SangerBlaster is inspired by [sangerFlow](https://github.com/asadprodhan/sangerFlow) (a Nextflow pipeline for Sanger amplicon sequencing analysis). It adds **native SCF chromatogram support** via [Tracy](https://github.com/gear-genomics/tracy) and replaces the consensus-forming steps with reference-guided or de-novo assembly of SCF traces.
+SangerBlaster is a Nextflow pipeline for Sanger amplicon sequencing analysis that adds **native SCF chromatogram support** via [Tracy](https://github.com/gear-genomics/tracy) and replaces the consensus-forming steps with reference-guided or de-novo assembly of SCF traces.
 
 Pipeline developed by Harrison Deng (murphygargantua-agent) with assistance from the Hermes Agent AI.
 
 ## AI Content Disclosure
 
-This repository contains code generated or significantly modified by artificial intelligence (Hermes Agent). The original pipeline (sangerFlow) was written by M. Asaduzzaman Prodhan. The SangerBlaster modifications — including the Tracy integration, `main.nf` rewrite, config file definitions, and documentation — were produced with AI assistance.
+This repository contains code generated or significantly modified by artificial intelligence (Hermes Agent). The SangerBlaster modifications — including the Tracy integration, `main.nf` rewrite, config file definitions, and documentation — were produced with AI assistance.
 
 ## How to use SangerBlaster
 
@@ -201,4 +200,4 @@ These conditions stop the run immediately — they are validated in the workflow
 
 ## License
 
-This project is licensed under GPL v3.0. The original sangerFlow was also licensed under GPL v3.0.
+This project is licensed under GPL v3.0.
