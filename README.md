@@ -35,21 +35,6 @@ tracy --version  # Should show v0.9.1+ or newer
 
 > **Important for SLURM servers:** You must have `conda` or `mamba` available in your environment PATH when running the pipeline. Nextflow will automatically create and use a Conda environment containing Tracy via the `conda 'bioconda::tracy'` directive in `main.nf`. If you encounter "tracy: command not found" errors, ensure conda is installed and accessible before running the pipeline.
 
-### Step 1b: Verify system requirements (recommended)
-
-Before running the pipeline, verify all requirements are met:
-
-```bash
-./check_requirements.sh
-```
-
-This script checks for:
-- ✓ Conda/Mamba with `tracy` package installed from Bioconda
-- ✓ Nextflow version
-- ✓ BLAST database availability (if specified)
-
-If any requirement is missing, the script exits with a clear error message.
-
 ### Step 2: Prepare a sample description file
 
 Create a TSV file with three columns:
